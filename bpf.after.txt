@@ -1,0 +1,52 @@
+
+AST after: parser
+-------------------
+Program
+ kprobe:tcp_sendmsg
+  =
+   map: @bytes :: type[none, ctx: 0]
+   + :: type[none, ctx: 0]
+    map: @bytes :: type[none, ctx: 0]
+    builtin: arg2 :: type[none, ctx: 0]
+ tracepoint:tcp:tcp_retransmit_skb
+  =
+   map: @retrans :: type[none, ctx: 0]
+   call: count :: type[none, ctx: 0]
+ interval:s:5
+  call: printf :: type[none, ctx: 0]
+   string: MB=%llu, retrans=%llu\n :: type[none, ctx: 0]
+   / :: type[none, ctx: 0]
+    map: @bytes :: type[none, ctx: 0]
+    int: 1048576 :: type[none, ctx: 0]
+   map: @retrans :: type[none, ctx: 0]
+  call: clear :: type[none, ctx: 0]
+   map: @bytes :: type[none, ctx: 0]
+  call: clear :: type[none, ctx: 0]
+   map: @retrans :: type[none, ctx: 0]
+
+
+AST after: ConfigAnalyser
+-------------------
+Program
+ kprobe:tcp_sendmsg
+  =
+   map: @bytes :: type[none, ctx: 0]
+   + :: type[none, ctx: 0]
+    map: @bytes :: type[none, ctx: 0]
+    builtin: arg2 :: type[none, ctx: 0]
+ tracepoint:tcp:tcp_retransmit_skb
+  =
+   map: @retrans :: type[none, ctx: 0]
+   call: count :: type[none, ctx: 0]
+ interval:s:5
+  call: printf :: type[none, ctx: 0]
+   string: MB=%llu, retrans=%llu\n :: type[string[23], ctx: 0]
+   / :: type[none, ctx: 0]
+    map: @bytes :: type[none, ctx: 0]
+    int: 1048576 :: type[int64, ctx: 0]
+   map: @retrans :: type[none, ctx: 0]
+  call: clear :: type[none, ctx: 0]
+   map: @bytes :: type[none, ctx: 0]
+  call: clear :: type[none, ctx: 0]
+   map: @retrans :: type[none, ctx: 0]
+
