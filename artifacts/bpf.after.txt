@@ -1,10 +1,10 @@
 Attaching 3 probes...
-MB=0, retrans=0
-MB=0, retrans=0
-MB=0, retrans=0
 MB=12, retrans=0
-MB=21, retrans=0
 MB=22, retrans=0
+MB=21, retrans=0
 MB=23, retrans=0
-@bytes[0]: 24277095
+MB=21, retrans=0
+MB=24, retrans=0
+MB=9, retrans=0
+
 

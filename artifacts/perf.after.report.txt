@@ -4,14 +4,28 @@
 #
 # Total Lost Samples: 0
 #
-# Samples: 50K of event 'cpu-clock:ppp'
-# Event count (approx.): 125922500000
+# Samples: 55K of event 'cpu-clock:ppp'
+# Event count (approx.): 138500000000
 #
-# Children      Self  Shared Object  Symbol
-# ........  ........  .............  ......
+# Children      Self  Shared Object      Symbol                                   
+# ........  ........  .................  .........................................
 #
+     0.00%     0.00%  [kernel.kallsyms]  [k] hash_contains_ip
+     0.00%     0.00%  [kernel.kallsyms]  [k] ret_from_fork_asm
+     0.00%     0.00%  [kernel.kallsyms]  [k] ret_from_fork
+     0.00%     0.00%  [kernel.kallsyms]  [k] kthread
+     0.00%     0.00%  [kernel.kallsyms]  [k] http_server_daemon
+     0.00%     0.00%  [kernel.kallsyms]  [k] kernel_accept
+     0.00%     0.00%  [kernel.kallsyms]  [k] inet_accept
+     0.00%     0.00%  [kernel.kallsyms]  [k] __inet_accept
+     0.00%     0.00%  [kernel.kallsyms]  [k] security_sock_graft
+     0.00%     0.00%  [kernel.kallsyms]  [k] apparmor_sock_graft
+     0.00%     0.00%  [kernel.kallsyms]  [k] ftrace_trampoline
+     0.00%     0.00%  [kernel.kallsyms]  [k] ftrace_graph_func
+     0.00%     0.00%  [kernel.kallsyms]  [k] function_graph_enter_regs
+     0.00%     0.00%  [kernel.kallsyms]  [k] ftrace_ops_test
 
 
 #
-# (Tip: Add -I to perf record to sample register values, which will be visible in perf report sample context.)
+# (Tip: System-wide collection from all CPUs: perf record -a)
 #
