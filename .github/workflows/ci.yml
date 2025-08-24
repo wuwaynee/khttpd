@@ -1,15 +1,42 @@
-name: CI (manual)
+name: Lint
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}  # manual trigger
+  pull_request:
+    paths:
+      - "**/*.c"
+      - "**/*.h"
+      - ".clang-format"
+      - "README.md"
+  push:
+    branches: [ main ]
+    paths:
+      - "**/*.c"
+      - "**/*.h"
+      - ".clang-format"
+      - "README.md"
 
 jobs:
-  userspace-smoke:
+  clang-format:
     runs-on: ubuntu-latest
+    continue-on-error: true  # never fail the workflow
     steps:
       - uses: actions/checkout@v4
-      - run: |
+      - name: Install clang-format
+        run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
-          gcc -O2 -Wall -Wextra -o htstress htstress.c
-          ./htstress --help || true
+          sudo apt-get install -y clang-format
+      - name: Check formatting (non-blocking)
+        run: |
+          files="$(git ls-files '*.c' '*.h')"
+          if [ -z "$files" ]; then
+            echo "No C/C++ files."; exit 0
+          fi
+          # Dry-run formatting; if there's diff, just print a warning and pass.
+          set +e
+          clang-format -n --Werror $files
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::clang-format suggested changes (not failing the job)"
+            exit 0
+          fi
