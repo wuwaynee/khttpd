@@ -16,3 +16,12 @@ http_parser.h
 htstress
 perf.data
 perf.*.data
+perf.data
+perf.*.data
+perf.data.old
+*.o
+*.ko
+*.mod
+*.mod.c
+*.order
+*.symvers
