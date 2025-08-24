@@ -23,17 +23,29 @@ Most HTTP servers run in user space, with mature ecosystems and great tooling. *
 
 ## Directory Layout
 .
+
 ├─ artifacts/ # Benchmark outputs (e.g., wrk baselines from previous runs)
+
 ├─ compat/ # Placeholder for portability or vendored code (optional)
+
 ├─ scripts/ # Dev scripts and Git hooks (pre-commit, pre-push, etc.)
+
 ├─ tools/ # BPF scripts and diagnostics (e.g., tcp_counters.bt)
+
 ├─ .clang-format # C/C++ style rules
+
 ├─ .gitignore
+
 ├─ LICENSE
+
 ├─ Makefile
+
 ├─ README.md
+
 ├─ http_server.c/.h # Minimal HTTP request/response logic
+
 └─ main.c # Module init/exit and wiring
+
 
 If you use the userspace tool `htstress.c`, it lives at the repository root and can be built independently for quick smoke tests.
 
