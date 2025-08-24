@@ -1,8 +1,8 @@
 /*
   tcp_counters.bt
-  - kprobe:tcp_sendmsg  -> accumulate bytes (記錄送出位元組)   // kprobe：核心函式動態探針
-  - tracepoint:tcp:tcp_retransmit_skb -> count TCP retransmits (統計重傳) // tracepoint：核心靜態事件
-  - interval:s:5 -> print every 5s (每 5 秒列印)
+  - kprobe:tcp_sendmsg -> accumulate bytes (TX payload)
+  - tracepoint:tcp:tcp_retransmit_skb -> count TCP retransmits
+  - interval:s:5 -> print every 5s
 */
 kprobe:tcp_sendmsg                { @bytes[0]   += arg2; }
 tracepoint:tcp:tcp_retransmit_skb { @retrans[0] += 1; }
