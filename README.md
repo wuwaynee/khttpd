@@ -22,6 +22,7 @@ Most HTTP servers run in user space, with mature ecosystems and great tooling. *
 
 
 ## Directory Layout
+```bash
 .
 
 ├─ artifacts/ # Benchmark outputs (e.g., wrk baselines from previous runs)
@@ -45,6 +46,7 @@ Most HTTP servers run in user space, with mature ecosystems and great tooling. *
 ├─ http_server.c/.h # Minimal HTTP request/response logic
 
 └─ main.c # Module init/exit and wiring
+```
 
 
 If you use the userspace tool `htstress.c`, it lives at the repository root and can be built independently for quick smoke tests.
