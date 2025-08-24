@@ -9,26 +9,42 @@
 
 #define CRLF "\r\n"
 
-#define HTTP_RESPONSE_200_DUMMY                               \
-    ""                                                        \
-    "HTTP/1.1 200 OK" CRLF "Server: " KBUILD_MODNAME CRLF     \
-    "Content-Type: text/plain" CRLF "Content-Length: 12" CRLF \
-    "Connection: Close" CRLF CRLF "Hello World!"
-#define HTTP_RESPONSE_200_KEEPALIVE_DUMMY                     \
-    ""                                                        \
-    "HTTP/1.1 200 OK" CRLF "Server: " KBUILD_MODNAME CRLF     \
-    "Content-Type: text/plain" CRLF "Content-Length: 12" CRLF \
-    "Connection: close" CRLF CRLF "Hello World!"
-#define HTTP_RESPONSE_501                                              \
-    ""                                                                 \
-    "HTTP/1.1 501 Not Implemented" CRLF "Server: " KBUILD_MODNAME CRLF \
-    "Content-Type: text/plain" CRLF "Content-Length: 21" CRLF          \
-    "Connection: Close" CRLF CRLF "501 Not Implemented" CRLF
-#define HTTP_RESPONSE_501_KEEPALIVE                                    \
-    ""                                                                 \
-    "HTTP/1.1 501 Not Implemented" CRLF "Server: " KBUILD_MODNAME CRLF \
-    "Content-Type: text/plain" CRLF "Content-Length: 21" CRLF          \
-    "Connection: KeepAlive" CRLF CRLF "501 Not Implemented" CRLF
+#define HTTP_RESPONSE_200_CLOSE \
+    "HTTP/1.1 200 OK" CRLF \
+    "Server: " KBUILD_MODNAME CRLF \
+    "Content-Type: text/plain" CRLF \
+    "Content-Length: 12" CRLF \
+    "Connection: close" CRLF \
+    CRLF \
+    "Hello World!"
+
+#define HTTP_RESPONSE_200_KEEPALIVE \
+    "HTTP/1.1 200 OK" CRLF \
+    "Server: " KBUILD_MODNAME CRLF \
+    "Content-Type: text/plain" CRLF \
+    "Content-Length: 12" CRLF \
+    "Connection: keep-alive" CRLF \
+    CRLF \
+    "Hello World!"
+
+#define HTTP_RESPONSE_501_CLOSE \
+    "HTTP/1.1 501 Not Implemented" CRLF \
+    "Server: " KBUILD_MODNAME CRLF \
+    "Content-Type: text/plain" CRLF \
+    "Content-Length: 21" CRLF \
+    "Connection: close" CRLF \
+    CRLF \
+    "501 Not Implemented" CRLF
+
+#define HTTP_RESPONSE_501_KEEPALIVE \
+    "HTTP/1.1 501 Not Implemented" CRLF \
+    "Server: " KBUILD_MODNAME CRLF \
+    "Content-Type: text/plain" CRLF \
+    "Content-Length: 21" CRLF \
+    "Connection: keep-alive" CRLF \
+    CRLF \
+    "501 Not Implemented" CRLF
+
 
 
 struct http_request {
@@ -38,7 +54,7 @@ struct http_request {
     int complete;
 };
 
-static int http_server_recv(struct socket *sock, char *buf, size_t size)
+static int http_server_recv(struct socket *sock, char *buf, size_t siz>
 {
     struct kvec iov = {.iov_base = (void *) buf, .iov_len = size};
     struct msghdr msg = {
@@ -51,7 +67,7 @@ static int http_server_recv(struct socket *sock, char *buf, size_t size)
     return kernel_recvmsg(sock, &msg, &iov, 1, size, msg.msg_flags);
 }
 
-static int http_server_send(struct socket *sock, const char *buf, size_t size)
+static int http_server_send(struct socket *sock, const char *buf, size>
 {
     struct msghdr msg = {
         .msg_name = NULL,
@@ -76,19 +92,22 @@ static int http_server_send(struct socket *sock, const char *buf, size_t size)
     return done;
 }
 
+
 static int http_server_response(struct http_request *request, int keep_alive)
 {
-    char *response;
+    const char *response;
 
-    pr_info("requested_url = %s\n", request->request_url);
     if (request->method != HTTP_GET)
-        response = keep_alive ? HTTP_RESPONSE_501_KEEPALIVE : HTTP_RESPONSE_501;
+        response = keep_alive ? HTTP_RESPONSE_501_KEEPALIVE
+                              : HTTP_RESPONSE_501_CLOSE;
     else
-        response = keep_alive ? HTTP_RESPONSE_200_KEEPALIVE_DUMMY
-                              : HTTP_RESPONSE_200_DUMMY;
+        response = keep_alive ? HTTP_RESPONSE_200_KEEPALIVE
+                              : HTTP_RESPONSE_200_CLOSE;
+
     http_server_send(request->socket, response, strlen(response));
     return 0;
 }
+
 
 static int http_parser_callback_message_begin(http_parser *parser)
 {
@@ -174,8 +193,9 @@ static int http_server_worker(void *arg)
     request.socket = socket;
     http_parser_init(&parser, HTTP_REQUEST);
     parser.data = &request;
+
     while (!kthread_should_stop()) {
-        int ret = http_server_recv(socket, buf, RECV_BUFFER_SIZE - 1);
+        int ret = http_server_recv(socket, buf, RECV_BUFFER_SIZE);
         if (ret <= 0) {
             if (ret) {
                 pr_err("recv error: %d\n", ret);
@@ -183,10 +203,11 @@ static int http_server_worker(void *arg)
             }
             goto out_free_buf;
         }
+
         http_parser_execute(&parser, &setting, buf, ret);
+
         if (request.complete && !http_should_keep_alive(&parser))
             goto out_free_buf;
-        memset(buf, 0, RECV_BUFFER_SIZE);
     }
 out_free_buf:
     mempool_free(buf, http_buf_pool);
@@ -213,7 +234,7 @@ int http_server_daemon(void *arg)
             pr_err("kernel_accept() error: %d\n", err);
             continue;
         }
-        worker = kthread_run(http_server_worker, socket, KBUILD_MODNAME);
+        worker = kthread_run(http_server_worker, socket, KBUILD_MODNAM>
         if (IS_ERR(worker)) {
             pr_err("can't create more worker process\n");
             kernel_sock_shutdown(socket, SHUT_RDWR);
@@ -223,3 +244,5 @@ int http_server_daemon(void *arg)
     }
     return 0;
 }
+
+
