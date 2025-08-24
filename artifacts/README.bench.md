@@ -53,12 +53,10 @@ Source: `artifacts/wrk.after.txt`
 ---
 
 ## Perf / BPF Notes
-
 ### perf
 Source: `artifacts/perf.after.report.txt`
 - `perf record` event: `cpu-clock:ppp`, **50K samples, 0 lost samples**
 - Use `perf report` to drill down hot symbols, consider `-g` for callgraphs and `--no-children` for leaf views.
-
 ### bpftrace
 Source: `artifacts/bpf.after.txt`
 - Sample output shows retransmits `retrans=0` while bytes climb (e.g., `@bytes[0]: 24277095`), indicating clean steady serving without TCP retransmissions under this load.
