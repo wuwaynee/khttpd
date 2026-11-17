@@ -151,7 +151,7 @@ def wait_ready(config):
 
 def unload(module):
     # Legacy connection module refs forbid unloading with live worker code.
-    for _ in range(200):
+    for _ in range(400):
         refs = read(f"/sys/module/{module}/refcnt").strip()
         if module == "khttpd" or refs == "0":
             run(privileged(["rmmod", module]), timeout=30)
@@ -287,8 +287,14 @@ def main():
         save()
         raise
     finally:
-        if loaded:
-            unload(loaded)
+        cleanup_error = None
+        try:
+            if loaded:
+                unload(loaded)
+        except Exception as error:
+            cleanup_error = error
+            manifest["cleanup_error"] = str(error)
+            save()
         run(privileged(["dmesg", "-n", old_console]), check=False)
         # A compact log export is readable through the connector even after artifact expiry.
         for path in sorted(out.glob("*.txt")):
@@ -297,6 +303,8 @@ def main():
                 print(base64.b64encode(path.read_bytes()).decode())
                 print("EVIDENCE_END " + path.name)
         print("MANIFEST_BASE64 " + base64.b64encode(manifest_path.read_bytes()).decode())
+        if cleanup_error:
+            raise cleanup_error
     print("DIAGNOSIS_COMPLETE", flush=True)
 
 

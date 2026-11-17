@@ -42,7 +42,7 @@ jobs:
         run: |
           python3 bench/diagnose/run.py --output build/performance/primary \
             --duration 30 --warmup 5 --repetitions 5 \
-            --profiles historical_close112,matched_close512,legacy_optimized4,hardened4
+            --profiles matched_close512,legacy_optimized4,hardened4
           python3 bench/diagnose/summarize.py build/performance/primary
       - name: Three repeated mechanism ablations
         run: |

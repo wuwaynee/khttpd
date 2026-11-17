@@ -6,6 +6,7 @@
 #define pr_fmt(fmt) "khttpd: " fmt
 
 #include <linux/kthread.h>
+#include <linux/jiffies.h>
 #include <linux/sched/signal.h>
 #include <linux/tcp.h>
 
@@ -259,6 +260,11 @@ int http_server_daemon(void *arg)
             pr_err("kernel_accept() error: %d\n", err);
             continue;
         }
+        /* Longer than wrk's 2s timeout: bounds orphaned idle sockets without
+         * shortening the deadline of any measured successful request.
+         */
+        WRITE_ONCE(socket->sk->sk_rcvtimeo, msecs_to_jiffies(10000));
+        WRITE_ONCE(socket->sk->sk_sndtimeo, msecs_to_jiffies(10000));
         this_cpu_inc(legacy_counts.accepted);
         if (!try_module_get(THIS_MODULE)) {
             kernel_sock_shutdown(socket, SHUT_RDWR);
