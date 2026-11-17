@@ -103,6 +103,10 @@ Kernel and userspace adapters use finite socket timeouts, so the engine can rech
 
 Counters aggregate on connection close. responses counts fully transmitted responses, ok counts transmitted 200 responses, protocol_errors includes rejected requests/routes, io_errors includes unsuccessful sends/reads, timeouts includes receive/idle deadline expiry, and alloc_errors covers per-connection buffer allocation failure. Send deadline failure contributes to io_errors. A successful send means acceptance by the TCP stack, not proof that a peer application received or consumed it.
 
+## Kernel API compatibility
+
+The socket-address pointer used by kernel_bind changed from sockaddr to sockaddr_unsized in newer kernels. This server passes the same properly aligned sockaddr_in storage and its explicit size through a void pointer conversion, so it does not guess a version or backport boundary. Build and runtime checks cover the actual generic and runner kernels recorded in CI. Linux internal APIs are not a stable out-of-tree module ABI; this conversion is not a promise of compatibility with every future kernel.
+
 ## Limitations and extensions
 
 There is no TLS, IPv6 listener, filesystem service, authentication, proxy support, arbitrary request body, chunked decoder, or production denial-of-service guarantee. The module operates in init_net rather than implementing per-network-namespace lifecycle. The finite worker model is a conscious simplification.

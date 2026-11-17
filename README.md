@@ -33,7 +33,7 @@ curl --fail http://127.0.0.1:8081/
 
 Use a disposable Linux VM. The module runs privileged networking code in the kernel; Secure Boot/lockdown may reject an unsigned module. Docker is not an isolated guest kernel.
 
-The automated guest matrix targets Ubuntu generic Linux 5.15 and 6.8 on x86-64. Exact package versions and test output are captured by each [CI run](https://github.com/wuwaynee/khttpd/actions). Other kernels and architectures need separate build/runtime verification.
+The automated x86-64 guest matrix includes Ubuntu generic Linux 5.15 and 6.8, plus the CI runner's preinstalled kernel. Exact package versions and test output are captured by each [CI run](https://github.com/wuwaynee/khttpd/actions). Other kernels and architectures need separate build/runtime verification.
 
 ~~~bash
 sudo apt-get install -y build-essential "linux-headers-$(uname -r)"
@@ -84,7 +84,7 @@ The full ablation uses --implementation both without --single, built kernel and 
 
 ## Validation and review
 
-[CI](.github/workflows/ci.yml) performs C warning checks, shared-engine tests, userspace socket integration, ASan/UBSan, a bounded fuzz smoke test, and isolated QEMU kernel lifecycle/protocol tests. A one-second wrk capture checks the evidence pipeline; it is not performance evidence. CI failures fail the workflow.
+[CI](.github/workflows/ci.yml) performs C warning checks, shared-engine tests, userspace socket integration, ASan/UBSan, a bounded fuzz smoke test, and isolated QEMU kernel lifecycle/protocol tests on the generic and runner kernels. A one-second wrk capture checks the evidence pipeline; it is not performance evidence. CI failures fail the workflow.
 
 - [Design and invariants](docs/DESIGN.md)
 - [Original 28-file audit](docs/AUDIT.md)

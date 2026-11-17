@@ -1,8 +1,8 @@
 # Validation record
 
-The fully passing engineering run verified commit **0d51ea80edd1d83bb0672276d91fc5a0842e93e0**:
+The fully passing four-job engineering run verified commit **fe02cfb0030c4f42de6134134af2ed3e040f6202**:
 
-[GitHub Actions run 43987848726](https://github.com/wuwaynee/khttpd/actions/runs/43987848726)
+[GitHub Actions run 43988760634](https://github.com/wuwaynee/khttpd/actions/runs/43988760634)
 
 | Check | Actual result |
 |---|---|
@@ -12,13 +12,14 @@ The fully passing engineering run verified commit **0d51ea80edd1d83bb0672276d91f
 | Evidence parser tests | 4 Python test methods, including malformed/incomplete/error logs, units, checksums and missing cells; pass |
 | Actual wrk pipeline smoke | One-second userspace capture, status/body/count validation, manifest loading and summarization; pass; not performance evidence |
 | ASan and UBSan | Shared engine unit suite; pass |
-| libFuzzer smoke | 3,319,389 executions in the time-limited run, maximum input length 8193; pass; finite smoke test, not exhaustive |
+| libFuzzer smoke | 3,018,675 executions in the time-limited run, maximum input length 8193; pass; finite smoke test, not exhaustive |
 | Ubuntu 22.04 guest | Linux 5.15.0-203-generic x86-64; module build and QEMU runtime pass |
-| Ubuntu 24.04 guest | Linux 6.8.0-149-generic x86-64; module build and QEMU runtime pass |
+| Ubuntu 24.04 generic guest | Linux 6.8.0-149-generic x86-64; module build and QEMU runtime pass |
+| Ubuntu 24.04 runner-kernel guest | Linux 7.0.0-1017-azure x86-64; module build and QEMU runtime pass |
 
-Each guest executed protocol/integration checks with configurations (shards,prealloc) = (1,1), (2,0), (2,1); rejected invalid parameters; exercised initialization failure after 0, 1 and 8 workers; unloaded while eight incomplete connections were live; checked a two-response connection cap; exercised real idle, partial-header and slow-drip deadlines; and repeated load/unload ten times. Both logs ended with KH_VM_PASS and the guest dmesg checks found no BUG/WARNING/panic matches.
+Each guest executed protocol/integration checks with configurations (shards,prealloc) = (1,1), (2,0), (2,1); rejected invalid parameters; exercised initialization failure after 0, 1 and 8 workers; unloaded while eight incomplete connections were live; checked a two-response connection cap; exercised real idle, partial-header and slow-drip deadlines; and repeated load/unload ten times. All three logs ended with KH_VM_PASS and the guest dmesg checks found no BUG/WARNING/panic matches.
 
-[Guest runtime excerpts](../artifacts/validation/README.md) preserve actual output from this run. Full job logs and artifacts are linked from GitHub Actions. The checked workflow also pins action revisions. Later documentation and optional BPF changes do not alter this tested C implementation.
+[Guest runtime excerpts](../artifacts/validation/README.md) preserve actual output from this run. Full job logs and artifacts are linked from GitHub Actions. The checked workflow also pins action revisions. The later documentation/evidence update does not alter this tested C implementation.
 
 ## Re-run
 

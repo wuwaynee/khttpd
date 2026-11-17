@@ -73,6 +73,9 @@ The completed requests under a closed-loop offered load. It is not a guarantee a
 **Why might preallocation show little benefit?**  
 With keep-alive, allocating once per connection is already amortized over many requests. Network/scheduling costs may dominate. A null result is useful if the experiment is controlled and the uncertainty is reported.
 
+**Which kernel versions did you actually test?**  
+Use the exact versions in VALIDATION.md. The matrix includes two generic LTS families and the runner kernel. The newer socket-address API required an explicit compatibility decision. Building against matching headers and symbols matters; Linux internal APIs do not promise a stable external-module ABI.
+
 **What is the actual contribution to Linux?**  
 An independently reviewable out-of-tree correctness/evaluation artifact. If you want to claim an upstream contribution, identify a real subsystem issue, submit a justified patch with evidence, and link the accepted change. This repository alone does not establish that.
 

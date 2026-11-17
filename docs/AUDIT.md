@@ -25,7 +25,7 @@ The original source links are immutable: [truncation and URL append](https://git
 | Original file | Review outcome and disposition |
 |---|---|
 | .clang-format | Reviewed; retained as an optional formatting preference. Style checking alone is not a correctness gate. |
-| .github/workflows/ci.yml | Replaced non-blocking lint with mandatory build/core/socket/evidence/sanitizer/fuzz and two guest-kernel jobs. Actions pinned to inspected commits; token permissions limited to contents:read. |
+| .github/workflows/ci.yml | Replaced non-blocking lint with mandatory build/core/socket/evidence/sanitizer/fuzz and generic and runner-kernel guest jobs. Actions pinned to inspected commits; token permissions limited to contents:read. |
 | .gitignore | Removed generated-parser assumptions; ignore kernel products, userspace build directory, Python cache and opt-in run captures. |
 | LICENSE | Retained MIT terms; restored NCKU's upstream copyright notice and kept extension attribution. |
 | Makefile | Removed automatic hook installation and unpinned downloads. Separate Kbuild, userspace, test and sanitizer targets. Works from an extracted source tree without .git for ordinary builds. Benchmark capture still requires Git source identity. |
