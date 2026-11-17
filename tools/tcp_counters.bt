@@ -1,12 +1,32 @@
+#!/usr/bin/env bpftrace
 /*
-  tcp_counters.bt
-  - kprobe:tcp_sendmsg -> accumulate bytes (TX payload)
-  - tracepoint:tcp:tcp_retransmit_skb -> count TCP retransmits
-  - interval:s:5 -> print every 5s
-*/
-kprobe:tcp_sendmsg                { @bytes[0]   += arg2; }
-tracepoint:tcp:tcp_retransmit_skb { @retrans[0] += 1; }
-interval:s:5 {
-  printf("MB=%llu, retrans=%llu\n", (@bytes[0]/1048576), @retrans[0]);
-  clear(@bytes); clear(@retrans);
+ * Optional kernel-only diagnostic: sudo bpftrace tools/tcp_counters.bt 8081
+ * Requires the named probe/tracepoint and their fields on the running kernel.
+ * Accepted bytes are tcp_sendmsg return values, not wire-delivered bytes.
+ * Retransmits are tracepoint events for the selected local TCP source port.
+ * Both maps are cumulative since attachment, not per-interval rates.
+ */
+BEGIN
+{
+    printf("khttpd accepted-send bytes; retransmit events on local port %d\n", $1);
+}
+
+kretprobe:tcp_sendmsg
+/comm == "khttpd"/
+{
+    if ((int64)retval > 0) {
+        @accepted_bytes = sum((int64)retval);
+    }
+}
+
+tracepoint:tcp:tcp_retransmit_skb
+/args->sport == $1/
+{
+    @retransmit_events = count();
+}
+
+interval:s:5
+{
+    print(@accepted_bytes);
+    print(@retransmit_events);
 }

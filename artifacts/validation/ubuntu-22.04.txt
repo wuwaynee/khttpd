@@ -1,0 +1,55 @@
+2026-11-17T00:29:36.0379773Z Linux (none) 5.15.0-203-generic #213-Ubuntu SMP Fri Oct 23 13:21:06 UTC 2026 x86_64 GNU/Linux
+2026-11-17T00:29:36.0380035Z [    1.479000] khttpd: loading out-of-tree module taints kernel.
+2026-11-17T00:29:36.0380324Z [    1.479977] khttpd: module verification failed: signature and/or required key missing - tainting kernel
+2026-11-17T00:29:36.0380607Z insmod: can't insert '/khttpd.ko': Invalid argument
+2026-11-17T00:29:36.0380792Z insmod: can't insert '/khttpd.ko': Invalid argument
+2026-11-17T00:29:36.0380973Z insmod: can't insert '/khttpd.ko': Invalid argument
+2026-11-17T00:29:36.0381153Z insmod: can't insert '/khttpd.ko': Invalid argument
+2026-11-17T00:29:36.0381336Z insmod: can't insert '/khttpd.ko': Input/output error
+2026-11-17T00:29:36.0381529Z insmod: can't insert '/khttpd.ko': Input/output error
+2026-11-17T00:29:36.0381716Z insmod: can't insert '/khttpd.ko': Input/output error
+2026-11-17T00:29:36.0382018Z [    2.282108] khttpd: ready bind=127.0.0.1 port=8081 workers=32 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0382297Z integration: framing, stream, errors, half-close, concurrency PASS
+2026-11-17T00:29:36.0382503Z deadline: partial, idle, slow-drip PASS
+2026-11-17T00:29:36.0382715Z responses=262 ok=249 protocol_errors=13 io_errors=0 timeouts=3 alloc_errors=0
+2026-11-17T00:29:36.0382947Z [    8.607436] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0383110Z HOLD_READY
+2026-11-17T00:29:36.0383221Z hold: all sockets closed
+2026-11-17T00:29:36.0383426Z [    8.660813] khttpd: ready bind=127.0.0.1 port=8081 workers=32 shards=2 prealloc=0 keep_alive=1
+2026-11-17T00:29:36.0383698Z integration: framing, stream, errors, half-close, concurrency PASS
+2026-11-17T00:29:36.0383902Z deadline: partial, idle, slow-drip PASS
+2026-11-17T00:29:36.0384107Z responses=262 ok=249 protocol_errors=13 io_errors=0 timeouts=3 alloc_errors=0
+2026-11-17T00:29:36.0384335Z [   15.017573] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0384495Z HOLD_READY
+2026-11-17T00:29:36.0384602Z hold: all sockets closed
+2026-11-17T00:29:36.0384811Z [   15.066021] khttpd: ready bind=127.0.0.1 port=8081 workers=32 shards=2 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0385084Z integration: framing, stream, errors, half-close, concurrency PASS
+2026-11-17T00:29:36.0385285Z deadline: partial, idle, slow-drip PASS
+2026-11-17T00:29:36.0385549Z responses=262 ok=249 protocol_errors=13 io_errors=0 timeouts=3 alloc_errors=0
+2026-11-17T00:29:36.0385776Z [   21.425922] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0385933Z HOLD_READY
+2026-11-17T00:29:36.0386039Z hold: all sockets closed
+2026-11-17T00:29:36.0386241Z [   21.473530] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0386503Z limit: PASS
+2026-11-17T00:29:36.0386634Z [   21.484809] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0386879Z [   21.533270] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0387123Z [   21.536608] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0387362Z [   21.580330] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0387603Z [   21.583650] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0387844Z [   21.632520] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0388088Z [   21.635762] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0388328Z [   21.684679] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0388576Z [   21.688303] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0388821Z [   21.740410] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0389067Z [   21.743919] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0389309Z [   21.796194] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0389551Z [   21.799420] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0389803Z [   21.852406] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0390043Z [   21.855582] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0390283Z [   21.904468] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0390525Z [   21.907749] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0390762Z [   21.956599] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0391006Z [   21.959934] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0391248Z [   22.004671] khttpd: ready bind=127.0.0.1 port=8081 workers=4 shards=1 prealloc=1 keep_alive=1
+2026-11-17T00:29:36.0391488Z [   22.007793] khttpd: stopped after joining all workers
+2026-11-17T00:29:36.0391647Z KH_VM_PASS
