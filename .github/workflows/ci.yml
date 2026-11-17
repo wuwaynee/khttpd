@@ -22,9 +22,18 @@ jobs:
       - name: Install test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang ripgrep python3
+          sudo apt-get install -y build-essential clang ripgrep python3 wrk
       - name: Shared engine and userspace integration
         run: make test
+      - name: Exercise evidence capture with real wrk (not performance evidence)
+        run: |
+          read -r server_cpu client_cpu < <(python3 -c \
+            'import os; c=sorted(os.sched_getaffinity(0)); print(c[0], c[1])')
+          python3 bench/run.py --implementation userspace --single \
+            --server-cpus "$server_cpu" --client-cpus "$client_cpu" \
+            --threads 1 --connections 2 --workers 8 --duration 1 --warmup 0 \
+            --repetitions 1 --output build/bench-smoke
+          python3 bench/summarize.py build/bench-smoke
       - name: Address and undefined-behavior sanitizers
         run: make sanitize
       - name: Bounded parser fuzz smoke test
@@ -53,7 +62,7 @@ jobs:
             linux-image-generic busybox-static cpio qemu-system-x86 ripgrep
       - name: Build against guest headers
         run: |
-          image=$(printf '%s\n' /boot/vmlinuz-* | sort -V | tail -n 1)
+          image=$(printf '%s\n' /boot/vmlinuz-*-generic | sort -V | tail -n 1)
           release=$(basename "$image")
           release=${release#vmlinuz-}
           make module KDIR="/lib/modules/$release/build"
