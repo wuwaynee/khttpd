@@ -92,7 +92,11 @@ static int open_listener(__be32 address, struct socket **result)
             goto fail;
     }
     WRITE_ONCE(socket->sk->sk_rcvtimeo, msecs_to_jiffies(250));
-    err = kernel_bind(socket, (struct sockaddr *)&addr, sizeof(addr));
+    /* The explicit length describes this sockaddr_in. Older kernels take
+     * sockaddr *, newer ones sockaddr_unsized *; both use this same storage.
+     * A void pointer conversion avoids guessing a version/backport boundary.
+     */
+    err = kernel_bind(socket, (void *)&addr, sizeof(addr));
     if (err)
         goto fail;
     err = kernel_listen(socket, backlog);
