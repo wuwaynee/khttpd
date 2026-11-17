@@ -2,7 +2,9 @@
 
 ## Evidence status
 
-There is no validated speedup for the current revision. The preserved 2025 logs are unverified historical records, not the baseline of the new experiment. One-second CI captures test the measurement code only. They are not representative steady-load results and must not become resume metrics.
+The historical optimization now has a separate [native same-machine reproduction](PERFORMANCE.md), described in [PERFORMANCE_METHOD.md](PERFORMANCE_METHOD.md). Use that protocol for the resume's before/after throughput and latency question. The remainder of this document specifies the kernel/userspace control experiment, which answers a different question.
+
+The kernel/userspace factorial experiment below has not been run in full. Its one-second CI captures test the measurement code only and are not representative steady-load results. The new native historical comparison is reported separately, with its own frozen configurations and evidence.
 
 A result is meaningful only with a source mapping, explicit control, correct responses, environment, repeated runs, and the limits below. Reproducing a procedure does not promise identical numbers on different hardware.
 
@@ -107,4 +109,4 @@ wrk is a closed-loop load generator. As a server slows, the client offers less w
 
 Publish the experiment directory and its source commit together after review. Generated run directories are ignored by default, so add a selected evidence directory explicitly with git add -f, including failed runs relevant to the comparison. Explain the experiment in prose; do not submit only a table of favorable medians.
 
-Do not claim an 11× speedup, allocation-latency reduction, fewer context switches, or Linux upstream contribution unless the corresponding measurements or accepted patch links exist.
+The historical before/after speedup is evaluated separately in PERFORMANCE.md. Use that dataset and its exact scope for the quantitative claim. This kernel/userspace protocol has not established a domain advantage, allocation-latency reduction, or Linux upstream contribution.

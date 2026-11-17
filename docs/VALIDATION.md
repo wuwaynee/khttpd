@@ -21,6 +21,12 @@ Each guest executed protocol/integration checks with configurations (shards,prea
 
 [Guest runtime excerpts](../artifacts/validation/README.md) preserve actual output from this run. Full job logs and artifacts are linked from GitHub Actions. The checked workflow also pins action revisions. The later documentation/evidence update does not alter this tested C implementation.
 
+## Latest source and evidence checks
+
+The later source **9ee238ad74fb65368d876fd56228a0944c307147** also passed all four [correctness jobs](https://github.com/wuwaynee/khttpd/actions/runs/44003653925): shared/userspace checks plus the three guest-kernel matrix jobs. The Python suite now has seven test methods, including the diagnostic summarizer's recomputation, tamper/missing/duplicate/incomplete rejection and retained socket-error accounting. Synthetic fixture values are not performance measurements.
+
+The native [five-repeat primary](https://github.com/wuwaynee/khttpd/actions/runs/44002074047) and [independent matched controls](https://github.com/wuwaynee/khttpd/actions/runs/44003646281) both completed successfully. Their published raw archive SHA-256 digests matched GitHub's artifact digests, and local recomputation of both summaries matched the archived JSON exactly. Exact performance environments and scope are in [PERFORMANCE.md](PERFORMANCE.md).
+
 ## Re-run
 
 ~~~bash
@@ -49,6 +55,8 @@ sudo install -m 0644 "$image" build/vmlinuz
 Only the guest loads khttpd.ko. The host needs sudo to copy the distro kernel image and create temporary initramfs device nodes.
 
 ## Limits
+
+The separate [native historical-performance reproduction](PERFORMANCE.md) now runs repeated before/after throughput and latency measurements. Its source, hardware, raw data and method are distinct from the correctness jobs recorded above.
 
 These are correctness and workflow checks. The real wrk smoke is too short and runs on shared CI hardware, so it supports no throughput/latency improvement claim. No controlled kernel/user performance matrix has been run during this revision.
 

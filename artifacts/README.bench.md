@@ -1,7 +1,11 @@
 # Benchmark evidence index
 
 - [Current measurement protocol](../docs/BENCHMARKING.md)
-- [Unverified 2025 records, preserved verbatim](legacy-2025/README.md)
+- [Historical 2025 records, preserved verbatim](legacy-2025/README.md)
 - [Correctness validation and its scope](../docs/VALIDATION.md)
 
-There is no newly measured performance improvement in this revision. New captures go under artifacts/runs/ and become evidence only with a complete manifest, response validation, repeated controlled runs and source mapping. Correctness CI output and synthetic test fixtures are not performance results.
+The new [native before/after results](../docs/PERFORMANCE.md) have their own repeated measurements, manifests and raw output. The historical logs remain separate. Correctness CI output, one-second harness checks and synthetic test fixtures are not performance results.
+
+- [Primary five-repeat dataset](performance/run_44002074047/summary.md)
+- [Independent matched mechanism dataset](performance/run_44003646281/summary.md)
+- [Incomplete predecessor, retained and excluded](performance/incomplete_run_44000139898/README.md)

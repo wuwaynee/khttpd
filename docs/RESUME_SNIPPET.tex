@@ -1,0 +1,10 @@
+% Quantitative source: docs/PERFORMANCE.md, run 44002074047.
+% Five 30-second cells per configuration, 4-vCPU Linux VM, loopback.
+% 13.3x is the median of paired run-level ratios, not a cross-machine ratio.
+\resumeProjectHeading
+  {\textbf{kHTTPD -- Kernel-Resident HTTP Microserver}
+  \href{https://github.com/wuwaynee/khttpd}{\faExternalLink}}{}
+\resumeItemListStart
+  \resumeItem{Optimized and hardened an experimental Linux kernel HTTP microserver with connection reuse, bounded workers, explicit socket ownership, and deadline-based I/O; added protocol/lifecycle CI and versioned benchmark evidence}
+  \resumeItem{Reproduced \textbf{13.3x} median throughput improvement (13.4k$\rightarrow$178.8k req/s), reducing p50 \textbf{18.26$\rightarrow$0.694ms} and p99 \textbf{34.36$\rightarrow$1.91ms} across five 30-second wrk 4T/256C loopback runs on a 4-vCPU Linux VM; published raw results and reproduction steps}
+\resumeItemListEnd

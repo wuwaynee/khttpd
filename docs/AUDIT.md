@@ -4,6 +4,8 @@ Scope: all **28 tracked files** at commit [e9540ba4f49701e8f42460a39c9961d13bd19
 
 This audit distinguishes observed defects from performance hypotheses and missing evidence. It is not a formal verification or an external security audit.
 
+Performance follow-up: the later [reconstruction and native measurements](PERFORMANCE.md) recovered the complete feature-branch hot path and reran before/after configurations. The inventory below records the initial audit snapshot; its missing-evidence findings should be read together with that subsequent result.
+
 ## Most consequential findings
 
 | Severity | Observed issue in the original snapshot | Remediation |
@@ -80,6 +82,6 @@ Statements about fragmentation, context switches, zero-copy behavior, CPU cost o
 
 See docs/VALIDATION.md for actual passing runs. Shared-engine sanitizer/fuzz tests exercise user-compiled code; the stock guest kernels are not KASAN-instrumented. VM protocol/lifecycle tests are real module execution, not a sanitizer proof of kernel memory safety.
 
-Optional BPF instrumentation, kernels outside the tested matrix, IPv6, network namespaces, production hardening and quantitative performance claims remain outside verified scope. The current build is self-contained; distro/toolchain packages are version-recorded rather than bit-reproducibly pinned in a full hermetic image.
+The initial snapshot had no verified quantitative performance result. The subsequent PERFORMANCE.md now records the repeated native before/after result and matched controls. Optional BPF instrumentation, kernels outside the tested matrix, IPv6, network namespaces and production hardening remain outside verified scope. The current build is self-contained; distro/toolchain packages are version-recorded rather than bit-reproducibly pinned in a full hermetic image.
 
-The concrete Linux value is a reviewable out-of-tree example with regression tests and controlled evidence capture. Upstream acceptance and a real server-performance improvement remain claims to earn separately.
+The concrete Linux value is a reviewable out-of-tree example with regression tests and controlled evidence capture. The follow-up measured a real before/after improvement for the fixed-response workload. Upstream acceptance and a general kernel/userspace performance advantage remain separate claims.
