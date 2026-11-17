@@ -1,0 +1,4 @@
+profile,n,median_req_s,min_req_s,max_req_s,median_p50_ms,median_p99_ms
+legacy_optimized4,5,180608.67,176958.28,181909.15,0.684,1.6
+hardened4,5,178780.35,175509.41,179788.53,0.6940000000000001,1.91
+matched_close512,5,13389.0,13363.29,13454.29,18.26,34.36

@@ -1,18 +1,16 @@
-# kernel module compile output
-*.ko.cmd
-*.o.cmd
-.tmp_versions
-*.symvers
-*.symvers.cmd
-*.mod*
-*.order
+# Kernel / userspace build products
 *.o
 *.ko
-
-# Other
-http_parser.c
-http_parser.h
-.cache.mk
-htstress
-perf.data
-perf.*.data
+*.mod
+*.mod.c
+.*.cmd
+.*.d
+Module.symvers
+modules.order
+.tmp_versions/
+/build/
+__pycache__/
+*.pyc
+# Benchmark captures are opt-in evidence; add reviewed captures explicitly.
+/artifacts/runs/
+perf.data*

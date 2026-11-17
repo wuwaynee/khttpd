@@ -1,248 +1,128 @@
+/* SPDX-License-Identifier: MIT
+ * Derived from the NCKU/sysprog21 khttpd teaching project.
+ * Connection engine and bounded worker lifecycle revised in 2026.
+ */
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-#include <linux/kthread.h>
-#include <linux/sched/signal.h>
+#include <linux/jiffies.h>
+#include <linux/ktime.h>
+#include <linux/slab.h>
 #include <linux/tcp.h>
-
-#include "http_parser.h"
+#include <net/tcp.h>
 #include "http_server.h"
 
-#define CRLF "\r\n"
-
-#define HTTP_RESPONSE_200_CLOSE \
-    "HTTP/1.1 200 OK" CRLF \
-    "Server: " KBUILD_MODNAME CRLF \
-    "Content-Type: text/plain" CRLF \
-    "Content-Length: 12" CRLF \
-    "Connection: close" CRLF \
-    CRLF \
-    "Hello World!"
-
-#define HTTP_RESPONSE_200_KEEPALIVE \
-    "HTTP/1.1 200 OK" CRLF \
-    "Server: " KBUILD_MODNAME CRLF \
-    "Content-Type: text/plain" CRLF \
-    "Content-Length: 12" CRLF \
-    "Connection: keep-alive" CRLF \
-    CRLF \
-    "Hello World!"
-
-#define HTTP_RESPONSE_501_CLOSE \
-    "HTTP/1.1 501 Not Implemented" CRLF \
-    "Server: " KBUILD_MODNAME CRLF \
-    "Content-Type: text/plain" CRLF \
-    "Content-Length: 21" CRLF \
-    "Connection: close" CRLF \
-    CRLF \
-    "501 Not Implemented" CRLF
-
-#define HTTP_RESPONSE_501_KEEPALIVE \
-    "HTTP/1.1 501 Not Implemented" CRLF \
-    "Server: " KBUILD_MODNAME CRLF \
-    "Content-Type: text/plain" CRLF \
-    "Content-Length: 21" CRLF \
-    "Connection: keep-alive" CRLF \
-    CRLF \
-    "501 Not Implemented" CRLF
-
-
-
-struct http_request {
+struct kernel_io {
     struct socket *socket;
-    enum http_method method;
-    char request_url[128];
-    int complete;
 };
 
-static int http_server_recv(struct socket *sock, char *buf, size_t siz>
+static int transport_result(int n)
 {
-    struct kvec iov = {.iov_base = (void *) buf, .iov_len = size};
-    struct msghdr msg = {
-        .msg_name = 0,
-        .msg_namelen = 0,
-        .msg_control = NULL,
-        .msg_controllen = 0,
-        .msg_flags = 0,
+    if (n == -EAGAIN || n == -EINTR || n == -ERESTARTSYS)
+        return KH_IO_RETRY;
+    return n < 0 ? KH_IO_ERROR : n;
+}
+
+static int kh_kernel_recv(void *context, char *buffer, size_t size)
+{
+    struct kernel_io *io = context;
+    struct kvec iov = { .iov_base = buffer, .iov_len = size };
+    struct msghdr msg = { 0 };
+
+    return transport_result(kernel_recvmsg(io->socket, &msg, &iov, 1, size, 0));
+}
+
+static int kh_kernel_send(void *context, const char *buffer, size_t size)
+{
+    struct kernel_io *io = context;
+    struct kvec iov = { .iov_base = (void *)buffer, .iov_len = size };
+    struct msghdr msg = { .msg_flags = MSG_NOSIGNAL };
+
+    return transport_result(kernel_sendmsg(io->socket, &msg, &iov, 1, size));
+}
+
+static unsigned long long clock_ms(void *context)
+{
+    (void)context;
+    return ktime_get_ns() / 1000000;
+}
+
+static int stopping(void *context)
+{
+    (void)context;
+    return READ_ONCE(kh_stopping) || kthread_should_stop();
+}
+
+static void serve(struct socket *socket, char *buffer)
+{
+    struct kernel_io context = { .socket = socket };
+    struct kh_io io = {
+        .context = &context,
+        .recv = kh_kernel_recv,
+        .send = kh_kernel_send,
+        .now_ms = clock_ms,
+        .stopped = stopping,
+        .timeout_ms = kh_config.timeout_ms,
+        .max_requests = kh_config.max_requests,
+        .keep_alive = kh_config.keep_alive,
     };
-    return kernel_recvmsg(sock, &msg, &iov, 1, size, msg.msg_flags);
-}
+    struct kh_stats stats = kh_serve(&io, buffer);
 
-static int http_server_send(struct socket *sock, const char *buf, size>
-{
-    struct msghdr msg = {
-        .msg_name = NULL,
-        .msg_namelen = 0,
-        .msg_control = NULL,
-        .msg_controllen = 0,
-        .msg_flags = 0,
-    };
-    int done = 0;
-    while (done < size) {
-        struct kvec iov = {
-            .iov_base = (void *) ((char *) buf + done),
-            .iov_len = size - done,
-        };
-        int length = kernel_sendmsg(sock, &msg, &iov, 1, iov.iov_len);
-        if (length < 0) {
-            pr_err("write error: %d\n", length);
-            break;
-        }
-        done += length;
-    }
-    return done;
-}
-
-
-static int http_server_response(struct http_request *request, int keep_alive)
-{
-    const char *response;
-
-    if (request->method != HTTP_GET)
-        response = keep_alive ? HTTP_RESPONSE_501_KEEPALIVE
-                              : HTTP_RESPONSE_501_CLOSE;
-    else
-        response = keep_alive ? HTTP_RESPONSE_200_KEEPALIVE
-                              : HTTP_RESPONSE_200_CLOSE;
-
-    http_server_send(request->socket, response, strlen(response));
-    return 0;
-}
-
-
-static int http_parser_callback_message_begin(http_parser *parser)
-{
-    struct http_request *request = parser->data;
-    struct socket *socket = request->socket;
-    memset(request, 0x00, sizeof(struct http_request));
-    request->socket = socket;
-    return 0;
-}
-
-static int http_parser_callback_request_url(http_parser *parser,
-                                            const char *p,
-                                            size_t len)
-{
-    struct http_request *request = parser->data;
-    strncat(request->request_url, p, len);
-    return 0;
-}
-
-static int http_parser_callback_header_field(http_parser *parser,
-                                             const char *p,
-                                             size_t len)
-{
-    return 0;
-}
-
-static int http_parser_callback_header_value(http_parser *parser,
-                                             const char *p,
-                                             size_t len)
-{
-    return 0;
-}
-
-static int http_parser_callback_headers_complete(http_parser *parser)
-{
-    struct http_request *request = parser->data;
-    request->method = parser->method;
-    return 0;
-}
-
-static int http_parser_callback_body(http_parser *parser,
-                                     const char *p,
-                                     size_t len)
-{
-    return 0;
-}
-
-static int http_parser_callback_message_complete(http_parser *parser)
-{
-    struct http_request *request = parser->data;
-    http_server_response(request, http_should_keep_alive(parser));
-    request->complete = 1;
-    return 0;
-}
-
-static int http_server_worker(void *arg)
-{
-    char *buf;
-    struct http_parser parser;
-    struct http_parser_settings setting = {
-        .on_message_begin = http_parser_callback_message_begin,
-        .on_url = http_parser_callback_request_url,
-        .on_header_field = http_parser_callback_header_field,
-        .on_header_value = http_parser_callback_header_value,
-        .on_headers_complete = http_parser_callback_headers_complete,
-        .on_body = http_parser_callback_body,
-        .on_message_complete = http_parser_callback_message_complete,
-    };
-    struct http_request request;
-    struct socket *socket = (struct socket *) arg;
-    int err = 0;
-
-    allow_signal(SIGKILL);
-    allow_signal(SIGTERM);
-
-    buf = mempool_alloc(http_buf_pool, GFP_KERNEL);
-    if (!buf) {
-        pr_err("can't allocate memory!\n");
-        err = -ENOMEM;
-        goto out;
-    }
-
-    request.socket = socket;
-    http_parser_init(&parser, HTTP_REQUEST);
-    parser.data = &request;
-
-    while (!kthread_should_stop()) {
-        int ret = http_server_recv(socket, buf, RECV_BUFFER_SIZE);
-        if (ret <= 0) {
-            if (ret) {
-                pr_err("recv error: %d\n", ret);
-                err = ret;
-            }
-            goto out_free_buf;
-        }
-
-        http_parser_execute(&parser, &setting, buf, ret);
-
-        if (request.complete && !http_should_keep_alive(&parser))
-            goto out_free_buf;
-    }
-out_free_buf:
-    mempool_free(buf, http_buf_pool);
-out:
-    kernel_sock_shutdown(socket, SHUT_RDWR);
-    sock_release(socket);
-    return err;
+    /* Publish at connection close, avoiding a global atomic on every GET. */
+    atomic64_add(stats.responses, &kh_responses);
+    atomic64_add(stats.ok, &kh_ok);
+    atomic64_add(stats.protocol_errors, &kh_protocol_errors);
+    atomic64_add(stats.io_errors, &kh_io_errors);
+    atomic64_add(stats.timeouts, &kh_timeouts);
 }
 
 int http_server_daemon(void *arg)
 {
-    struct socket *socket;
-    struct task_struct *worker;
-    struct http_server_param *param = (struct http_server_param *) arg;
+    struct kh_worker *worker = arg;
 
-    allow_signal(SIGKILL);
-    allow_signal(SIGTERM);
+    while (!stopping(NULL)) {
+        struct socket *socket = NULL;
+        char *buffer;
+        int err = kernel_accept(worker->listener, &socket, 0);
 
-    while (!kthread_should_stop()) {
-        int err = kernel_accept(param->listen_socket, &socket, 0);
-        if (err < 0) {
-            if (signal_pending(current))
+        if (err) {
+            if (stopping(NULL))
                 break;
-            pr_err("kernel_accept() error: %d\n", err);
+            if (err != -EAGAIN && err != -EINTR && err != -ERESTARTSYS) {
+                pr_warn_ratelimited("accept failed: %d\n", err);
+                schedule_timeout_interruptible(msecs_to_jiffies(20));
+            }
             continue;
         }
-        worker = kthread_run(http_server_worker, socket, KBUILD_MODNAM>
-        if (IS_ERR(worker)) {
-            pr_err("can't create more worker process\n");
+
+        /* Publication and removal serialize with module shutdown. */
+        mutex_lock(&worker->client_lock);
+        if (stopping(NULL)) {
+            mutex_unlock(&worker->client_lock);
             kernel_sock_shutdown(socket, SHUT_RDWR);
             sock_release(socket);
-            continue;
+            break;
         }
+        worker->client = socket;
+        mutex_unlock(&worker->client_lock);
+
+        WRITE_ONCE(socket->sk->sk_rcvtimeo, msecs_to_jiffies(250));
+        WRITE_ONCE(socket->sk->sk_sndtimeo, msecs_to_jiffies(250));
+        tcp_sock_set_nodelay(socket->sk);
+        buffer = kh_config.prealloc ? worker->buffer :
+            kmalloc(KH_HEADER_CAP, GFP_KERNEL_ACCOUNT);
+        if (buffer) {
+            serve(socket, buffer);
+            if (!kh_config.prealloc)
+                kfree(buffer);
+        } else {
+            atomic64_inc(&kh_alloc_errors);
+        }
+
+        mutex_lock(&worker->client_lock);
+        worker->client = NULL;
+        mutex_unlock(&worker->client_lock);
+        kernel_sock_shutdown(socket, SHUT_RDWR);
+        sock_release(socket);
+        cond_resched();
     }
     return 0;
 }
-
-

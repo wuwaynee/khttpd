@@ -1,0 +1,60 @@
+name: performance-diagnosis
+on:
+  push:
+    branches: ["fix/lifecycle-protocol-reproducibility"]
+    paths:
+      - ".github/workflows/performance.yml"
+      - "bench/diagnose/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: performance-diagnosis
+  cancel-in-progress: true
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Prepare an ephemeral Linux measurement VM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential wrk ripgrep python3
+          mkdir -p build/performance
+          uname -a | tee build/performance/uname.txt
+          lscpu | tee build/performance/lscpu.txt
+          cat /proc/sys/kernel/modules_disabled
+          cat /sys/kernel/security/lockdown || true
+          test -d "/lib/modules/$(uname -r)/build"
+          make module
+          modinfo khttpd.ko > build/performance/modinfo.txt
+      - name: Build recovered historical hot path
+        run: |
+          make -C "/lib/modules/$(uname -r)/build" \
+            M="$PWD/bench/diagnose/legacy" W=1 modules
+          modinfo bench/diagnose/legacy/khttpd_legacy.ko \
+            > build/performance/legacy-modinfo.txt
+      - name: Five paired 30-second primary measurements
+        run: |
+          python3 bench/diagnose/run.py --output build/performance/primary \
+            --duration 30 --warmup 5 --repetitions 5 \
+            --profiles matched_close512,legacy_optimized4,hardened4
+          python3 bench/diagnose/summarize.py build/performance/primary
+      - name: Three repeated mechanism ablations
+        run: |
+          python3 bench/diagnose/run.py --output build/performance/ablations \
+            --duration 10 --warmup 2 --repetitions 3 \
+            --profiles close_no_logging,keepalive_logged512,keepalive_quiet512,legacy_optimized1,legacy_no_pool,hardened1,hardened_alloc,hardened_close
+          python3 bench/diagnose/summarize.py build/performance/ablations
+      - name: Capture diagnostic kernel messages on failure
+        if: failure()
+        run: sudo dmesg | tail -n 80
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with:
+          name: performance-diagnosis
+          path: build/performance/
