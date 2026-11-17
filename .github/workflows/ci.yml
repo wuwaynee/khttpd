@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install test dependencies
         run: |
           sudo apt-get update
@@ -41,11 +41,13 @@ jobs:
           clang -std=c11 -g -O1 -fsanitize=fuzzer,address,undefined \
             tests/fuzz_protocol.c http_protocol.c -o build/fuzz
           ./build/fuzz -max_total_time=20 -max_len=8193
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: userspace-logs
-          path: build/*.log
+          path: |
+            build/*.log
+            build/bench-smoke/
   kernel:
     strategy:
       fail-fast: false
@@ -54,7 +56,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install matching guest kernel and tooling
         run: |
           sudo apt-get update
@@ -72,7 +74,7 @@ jobs:
           modinfo khttpd.ko > build/modinfo.txt
       - name: Protocol, partial-init and active-unload tests in QEMU
         run: ./scripts/ci-vm.sh "$PWD/build/vmlinuz"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: kernel-${{ matrix.os }}

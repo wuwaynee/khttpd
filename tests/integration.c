@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #define CHECK(x) do { if (!(x)) { \
@@ -160,6 +161,36 @@ int main(int argc, char **argv)
         for (i = 0; i < 8; ++i)
             eof(&held[i]);
         puts("hold: all sockets closed");
+        return 0;
+    }
+    if (argc == 3 && !strcmp(argv[2], "deadline")) {
+        struct timespec pause = { .tv_nsec = 100000000 };
+        int observed = 0;
+
+        /* Used with a 2s server deadline by the automated adapters. */
+        c = connect_server();
+        write_all(c.fd, "GET", 3);
+        response(&c, 408, 0);
+        eof(&c);
+        c = connect_server();
+        eof(&c); /* An idle connection also expires. */
+        c = connect_server();
+        for (i = 0; i < 40; ++i) {
+            char byte;
+            ssize_t n = recv(c.fd, &byte, 1, MSG_PEEK | MSG_DONTWAIT);
+
+            if (n > 0) {
+                observed = 1;
+                break;
+            }
+            CHECK(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK));
+            write_all(c.fd, i == 0 ? "G" : " ", 1);
+            nanosleep(&pause, NULL);
+        }
+        CHECK(observed); /* Dripping bytes must not renew the header deadline. */
+        response(&c, 408, 0);
+        eof(&c);
+        puts("deadline: partial, idle, slow-drip PASS");
         return 0;
     }
     if (argc == 3 && !strcmp(argv[2], "limit")) {

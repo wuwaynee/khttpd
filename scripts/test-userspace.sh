@@ -24,6 +24,7 @@ for config in "1 1" "2 0"; do
     done
     [[ "$ready" == 1 ]]
     ./build/integration 18081
+    ./build/integration 18081 deadline
     ./build/integration 18081 hold > build/hold.log &
     holder=$!
     ready=0

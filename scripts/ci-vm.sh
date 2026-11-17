@@ -37,6 +37,7 @@ for config in "1 1" "2 0" "2 1"; do
     set -- $config
     insmod /khttpd.ko workers=32 shards="$1" prealloc="$2" timeout_ms=2000
     /integration 8081
+    /integration 8081 deadline
     cat /sys/module/khttpd/parameters/stats
     /integration 8081 hold > /tmp/hold.log &
     holder=$!
