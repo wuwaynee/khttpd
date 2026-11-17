@@ -22,6 +22,8 @@ PROFILES = {
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=1),
     "framed_close110": dict(kind="legacy", keep_alive=0, log_requests=1,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=0),
+    "framed_close512": dict(kind="legacy", keep_alive=0, log_requests=1,
+        clear_buffer=1, shards=1, backlog=512, use_pool=1, extra_crlf=0),
     "no_logging": dict(kind="legacy", keep_alive=0, log_requests=0,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=0),
     "keepalive_with_logging": dict(kind="legacy", keep_alive=1, log_requests=1,
@@ -69,7 +71,7 @@ def counters(text):
     return {key: int(value) for key, value in re.findall(r"(\w+)=(\d+)", text)}
 
 
-def parse(text, validated=False):
+def parse(text, validated=False, allow_errors=False):
     def find(pattern):
         result = re.search(pattern, text, re.MULTILINE)
         if not result:
@@ -85,7 +87,8 @@ def parse(text, validated=False):
     errors = [tuple(map(int, m.groups())) for m in re.finditer(
         r"Socket errors: connect (\d+), read (\d+), write (\d+), timeout (\d+)", text)]
     status = re.search(r"Non-2xx or 3xx responses:\s+(\d+)", text)
-    if any(any(row) for row in errors) or (status and int(status[1])):
+    error_counts = [sum(row[i] for row in errors) for i in range(4)]
+    if (any(error_counts) and not allow_errors) or (status and int(status[1])):
         raise ValueError("wrk reported errors")
     if requests <= 0 or qps <= 0:
         raise ValueError("empty measurement")
@@ -95,7 +98,9 @@ def parse(text, validated=False):
             raise ValueError("status/body validation failure")
     return dict(requests=requests, seconds=seconds, req_s=qps,
                 avg_ms=latency("Latency"), p50_ms=latency("50%"),
-                p99_ms=latency("99%"))
+                p99_ms=latency("99%"),
+                socket_errors=dict(zip(("connect", "read", "write", "timeout"), error_counts)),
+                socket_error_events=sum(error_counts))
 
 
 def snap(module):
@@ -219,14 +224,14 @@ def main():
                     validation = run(validate_cmd)
                     validation_path = out / (prefix + ".validation.txt")
                     validation_path.write_text(validation.stdout + validation.stderr)
-                    record["validation"] = parse(validation.stdout, validated=True)
+                    record["validation"] = parse(validation.stdout, validated=True, allow_errors=True)
                     record["validation_file"] = validation_path.name
                     record["validation_sha256"] = sha(validation_path)
                     if args.warmup:
                         warm = run([wrk, "-t4", "-c256", f"-d{args.warmup}s", "--latency",
                                     "--timeout", "2s", "http://127.0.0.1:8081/"])
                         (out / (prefix + ".warmup.txt")).write_text(warm.stdout + warm.stderr)
-                        parse(warm.stdout)
+                        parse(warm.stdout, allow_errors=True)
                     time.sleep(.25)
                     record["before"] = snap(module)
                     argv = [str(wrk), "-t4", "-c256", f"-d{args.duration}s",
@@ -242,7 +247,7 @@ def main():
                     record.update(command=argv, returncode=measured.returncode,
                         stdout_file=raw.name, stdout_sha256=sha(raw),
                         stderr_file=err.name, stderr_sha256=sha(err),
-                        metrics=parse(measured.stdout), complete=True)
+                        metrics=parse(measured.stdout, allow_errors=True), complete=True)
                     save()
                     print("RESULT " + json.dumps(dict(profile=name, repetition=rep,
                           **record["metrics"], before=record["before"]["module"],
@@ -262,13 +267,13 @@ def main():
         if loaded:
             unload(loaded)
         run(privileged(["dmesg", "-n", old_console]), check=False)
-    # A compact log export is readable through the connector even after artifact expiry.
-    for path in sorted(out.glob("*.txt")):
-        if path.stat().st_size <= 50000:
-            print("EVIDENCE_BEGIN " + path.name)
-            print(base64.b64encode(path.read_bytes()).decode())
-            print("EVIDENCE_END " + path.name)
-    print("MANIFEST_BASE64 " + base64.b64encode(manifest_path.read_bytes()).decode())
+        # A compact log export is readable through the connector even after artifact expiry.
+        for path in sorted(out.glob("*.txt")):
+            if path.stat().st_size <= 50000:
+                print("EVIDENCE_BEGIN " + path.name)
+                print(base64.b64encode(path.read_bytes()).decode())
+                print("EVIDENCE_END " + path.name)
+        print("MANIFEST_BASE64 " + base64.b64encode(manifest_path.read_bytes()).decode())
     print("DIAGNOSIS_COMPLETE", flush=True)
 
 

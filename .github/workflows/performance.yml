@@ -41,7 +41,7 @@ jobs:
       - name: Run matched historical and hardened pilot
         run: |
           python3 bench/diagnose/run.py --output build/performance \
-            --duration 5 --warmup 1 --repetitions 1
+            --duration 5 --warmup 2 --repetitions 1
       - name: Capture diagnostic kernel messages on failure
         if: failure()
         run: sudo dmesg | tail -n 80
