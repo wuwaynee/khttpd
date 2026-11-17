@@ -1,260 +1,221 @@
+/* SPDX-License-Identifier: MIT
+ * Derived from the NCKU/sysprog21 khttpd teaching project.
+ */
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-#include <linux/cpu.h>
-#include <linux/kthread.h>
-#include <linux/mempool.h>
-#include <linux/sched/signal.h>
+#include <linux/inet.h>
+#include <linux/jiffies.h>
+#include <linux/module.h>
+#include <linux/sched/task.h>
 #include <linux/slab.h>
-#include <linux/tcp.h>
-#include <linux/version.h>
-#include <net/sock.h>
-
+#include <linux/sockptr.h>
 #include "http_server.h"
 
-#define DEFAULT_PORT    8081
-#define DEFAULT_BACKLOG 512
-#define POOL_MIN_NR     4
-
-mempool_t *http_buf_pool;
-
-static ushort port = DEFAULT_PORT;
+static unsigned short port = 8081;
 module_param(port, ushort, 0444);
-static ushort backlog = DEFAULT_BACKLOG;
-module_param(backlog, ushort, 0444);
+MODULE_PARM_DESC(port, "TCP port (1..65535)");
+static char *bind_addr = "127.0.0.1";
+module_param(bind_addr, charp, 0444);
+MODULE_PARM_DESC(bind_addr, "IPv4 bind address; loopback by default");
+static unsigned int workers = 64;
+module_param(workers, uint, 0444);
+MODULE_PARM_DESC(workers, "Fixed worker/active connection limit (1..512)");
+static unsigned int shards = 1;
+module_param(shards, uint, 0444);
+MODULE_PARM_DESC(shards, "SO_REUSEPORT listeners (1..min(workers,64))");
+static unsigned int backlog = 512;
+module_param(backlog, uint, 0444);
+MODULE_PARM_DESC(backlog, "Pending accept queue limit per listener (1..4096)");
+static unsigned int timeout_ms = 5000;
+module_param(timeout_ms, uint, 0444);
+MODULE_PARM_DESC(timeout_ms, "Absolute header/idle and response deadline (100..60000 ms)");
+static unsigned int max_requests = 1024;
+module_param(max_requests, uint, 0444);
+MODULE_PARM_DESC(max_requests, "Maximum responses per connection (1..1000000)");
+static bool keep_alive = true;
+module_param(keep_alive, bool, 0444);
+static bool prealloc = true;
+module_param(prealloc, bool, 0444);
+MODULE_PARM_DESC(prealloc, "Preallocate one reusable header buffer per worker");
+static int fail_start_after = -1;
+module_param(fail_start_after, int, 0444);
+MODULE_PARM_DESC(fail_start_after, "Test only: fail init after N workers, -1 disables");
 
-static int workers = 0;
-module_param(workers, int, 0444);
+struct kh_config kh_config;
+bool kh_stopping;
+atomic64_t kh_responses = ATOMIC64_INIT(0);
+atomic64_t kh_ok = ATOMIC64_INIT(0);
+atomic64_t kh_protocol_errors = ATOMIC64_INIT(0);
+atomic64_t kh_io_errors = ATOMIC64_INIT(0);
+atomic64_t kh_timeouts = ATOMIC64_INIT(0);
+atomic64_t kh_alloc_errors = ATOMIC64_INIT(0);
 
-static struct socket        **listen_sockets;
-static struct http_server_param *params;
-static struct task_struct   **http_servers;
+static struct socket **listeners;
+static struct kh_worker *pool;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
-
-static int set_sock_opt(struct socket *sock, int level, int optname,
-                        char *optval, unsigned int optlen)
+static int stats_get(char *buffer, const struct kernel_param *param)
 {
-    int v;
-
-    if (optlen < sizeof(int))
-        return -EINVAL;
-
-    v = *(int *)optval;
-
-    switch (optname) {
-    case SO_REUSEADDR:
-        sock_set_reuseaddr(sock->sk);
-        break;
-    case SO_REUSEPORT:
-        sock_set_reuseport(sock->sk, v);
-        break;
-    case SO_RCVBUF:
-        sock_set_rcvbuf(sock->sk, v);
-        break;
-    case SO_SNDBUF:
-        sock_set_sndbuf(sock->sk, v);
-        break;
-    default:
-        return -ENOPROTOOPT;
-    }
-    return 0;
+    (void)param;
+    return scnprintf(buffer, PAGE_SIZE,
+        "responses=%lld ok=%lld protocol_errors=%lld io_errors=%lld "
+        "timeouts=%lld alloc_errors=%lld\n",
+        (long long)atomic64_read(&kh_responses),
+        (long long)atomic64_read(&kh_ok),
+        (long long)atomic64_read(&kh_protocol_errors),
+        (long long)atomic64_read(&kh_io_errors),
+        (long long)atomic64_read(&kh_timeouts),
+        (long long)atomic64_read(&kh_alloc_errors));
 }
+static const struct kernel_param_ops stats_ops = { .get = stats_get };
+module_param_cb(stats, &stats_ops, NULL, 0444);
 
-static int set_tcp_opt(struct socket *sock, int level, int optname,
-                       char *optval, unsigned int optlen)
+static int open_listener(__be32 address, struct socket **result)
 {
-    if (optlen < sizeof(int))
-        return -EINVAL;
+    struct sockaddr_in addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(port),
+        .sin_addr.s_addr = address,
+    };
+    struct socket *socket;
+    int value = 1, err;
 
-    switch (optname) {
-    case TCP_NODELAY:
-        tcp_sock_set_nodelay(sock->sk);
-        break;
-    case TCP_CORK:
-        tcp_sock_set_cork(sock->sk, *(bool *)optval);
-        break;
-    default:
-        return -ENOPROTOOPT;
-    }
-    return 0;
-}
-
-static int kernel_setsockopt(struct socket *sock, int level, int optname,
-                             char *optval, unsigned int optlen)
-{
-    if (level == SOL_SOCKET)
-        return set_sock_opt(sock, level, optname, optval, optlen);
-    else if (level == SOL_TCP)
-        return set_tcp_opt(sock, level, optname, optval, optlen);
-    return -EINVAL;
-}
-#endif /* >= 5.8 */
-
-static inline int setsockopt_int(struct socket *sock, int level,
-                                 int optname, int optval)
-{
-    int opt = optval;
-    return kernel_setsockopt(sock, level, optname,
-                             (char *)&opt, sizeof(opt));
-}
-
-static int open_listen_socket(ushort portnr, ushort bklg, struct socket **res)
-{
-    struct socket *sock;
-    struct sockaddr_in s;
-    int err;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
-    err = sock_create_kern(&init_net, PF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
-#else
-    err = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP, &sock);
-#endif
-    if (err < 0) {
-        pr_err("sock_create() failure, err=%d\n", err);
+    err = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &socket);
+    if (err)
         return err;
+    err = sock_setsockopt(socket, SOL_SOCKET, SO_REUSEADDR,
+                         KERNEL_SOCKPTR(&value), sizeof(value));
+    if (err)
+        goto fail;
+    if (shards > 1) {
+        err = sock_setsockopt(socket, SOL_SOCKET, SO_REUSEPORT,
+                             KERNEL_SOCKPTR(&value), sizeof(value));
+        if (err)
+            goto fail;
     }
-
-    if ((err = setsockopt_int(sock, SOL_SOCKET, SO_REUSEADDR, 1)) < 0)
-        goto bail_setsockopt;
-    if ((err = setsockopt_int(sock, SOL_SOCKET, SO_REUSEPORT, 1)) < 0)
-        goto bail_setsockopt;
-
-    if ((err = setsockopt_int(sock, SOL_TCP, TCP_NODELAY, 1)) < 0)
-        goto bail_setsockopt;
-    if ((err = setsockopt_int(sock, SOL_TCP, TCP_CORK, 0)) < 0)
-        goto bail_setsockopt;
-
-    if ((err = setsockopt_int(sock, SOL_SOCKET, SO_RCVBUF, 1024 * 1024)) < 0)
-        goto bail_setsockopt;
-    if ((err = setsockopt_int(sock, SOL_SOCKET, SO_SNDBUF, 1024 * 1024)) < 0)
-        goto bail_setsockopt;
-
-    memset(&s, 0, sizeof(s));
-    s.sin_family      = AF_INET;
-    s.sin_addr.s_addr = htonl(INADDR_ANY);
-    s.sin_port        = htons(portnr);
-
-    err = kernel_bind(sock, (struct sockaddr *)&s, sizeof(s));
-    if (err < 0) {
-        pr_err("kernel_bind() failure, err=%d\n", err);
-        goto bail_sock;
-    }
-
-    err = kernel_listen(sock, bklg);
-    if (err < 0) {
-        pr_err("kernel_listen() failure, err=%d\n", err);
-        goto bail_sock;
-    }
-
-    *res = sock;
+    WRITE_ONCE(socket->sk->sk_rcvtimeo, msecs_to_jiffies(250));
+    err = kernel_bind(socket, (struct sockaddr *)&addr, sizeof(addr));
+    if (err)
+        goto fail;
+    err = kernel_listen(socket, backlog);
+    if (err)
+        goto fail;
+    *result = socket;
     return 0;
-
-bail_setsockopt:
-    pr_err("kernel_setsockopt() failure, err=%d\n", err);
-bail_sock:
-    sock_release(sock);
+fail:
+    sock_release(socket);
     return err;
 }
 
-static void close_listen_socket(struct socket *socket)
+static void stop_server(void)
 {
-    if (!socket) return;
-    kernel_sock_shutdown(socket, SHUT_RDWR);
-    sock_release(socket);
+    unsigned int i;
+
+    WRITE_ONCE(kh_stopping, true);
+    /* Wake accepts, then receive/send calls, before joining any worker. */
+    if (listeners)
+        for (i = 0; i < shards; ++i)
+            if (listeners[i])
+                kernel_sock_shutdown(listeners[i], SHUT_RDWR);
+    if (pool) {
+        for (i = 0; i < workers; ++i) {
+            mutex_lock(&pool[i].client_lock);
+            if (pool[i].client)
+                kernel_sock_shutdown(pool[i].client, SHUT_RDWR);
+            mutex_unlock(&pool[i].client_lock);
+        }
+        for (i = 0; i < workers; ++i) {
+            if (pool[i].task) {
+                kthread_stop(pool[i].task);
+                put_task_struct(pool[i].task);
+            }
+            kfree(pool[i].buffer);
+        }
+    }
+    /* No worker can reach a listener or buffer after the joins. */
+    if (listeners)
+        for (i = 0; i < shards; ++i)
+            if (listeners[i])
+                sock_release(listeners[i]);
+    kfree(pool);
+    kfree(listeners);
 }
 
 static int __init khttpd_init(void)
 {
-    int i, err;
+    __be32 address;
+    const char *end;
+    unsigned int i;
+    int err;
 
-    if (!(http_buf_pool = mempool_create(POOL_MIN_NR, http_buf_alloc,
-                                         http_buf_free, NULL))) {
-        pr_err("failed to create mempool\n");
-        return -ENOMEM;
-    }
+    if (!port || !workers || workers > 512 || !shards ||
+        shards > workers || shards > 64 || !backlog || backlog > 4096 ||
+        timeout_ms < 100 || timeout_ms > 60000 ||
+        !max_requests || max_requests > 1000000 ||
+        fail_start_after < -1 || fail_start_after > (int)workers ||
+        !in4_pton(bind_addr, -1, (u8 *)&address, -1, &end) || *end)
+        return -EINVAL;
 
-    if (workers <= 0)
-        workers = max(2, num_online_cpus()); 
-
-    listen_sockets = kcalloc(workers, sizeof(*listen_sockets), GFP_KERNEL);
-    params         = kcalloc(workers, sizeof(*params), GFP_KERNEL);
-    http_servers   = kcalloc(workers, sizeof(*http_servers), GFP_KERNEL);
-    if (!listen_sockets || !params || !http_servers) {
+    kh_config = (struct kh_config) {
+        .timeout_ms = timeout_ms, .max_requests = max_requests,
+        .keep_alive = keep_alive, .prealloc = prealloc,
+    };
+    listeners = kcalloc(shards, sizeof(*listeners), GFP_KERNEL);
+    pool = kcalloc(workers, sizeof(*pool), GFP_KERNEL);
+    /* Initialize all locks even if a later allocation fails. */
+    if (pool)
+        for (i = 0; i < workers; ++i)
+            mutex_init(&pool[i].client_lock);
+    if (!listeners || !pool) {
         err = -ENOMEM;
-        goto bail_alloc;
+        goto fail;
     }
-
-    for (i = 0; i < workers; i++) {
-        err = open_listen_socket(port, backlog, &listen_sockets[i]);
-        if (err < 0) {
-            pr_err("open_listen_socket[%d] failed: %d\n", i, err);
-            goto bail_open;
-        }
-
-        params[i].listen_socket = listen_sockets[i];
-
-        http_servers[i] = kthread_run(http_server_daemon, &params[i],
-                                      KBUILD_MODNAME);
-        if (IS_ERR(http_servers[i])) {
-            err = PTR_ERR(http_servers[i]);
-            pr_err("can't start http server daemon[%d]: %d\n", i, err);
-            http_servers[i] = NULL;
-            goto bail_open;
-        }
+    for (i = 0; i < shards; ++i) {
+        err = open_listener(address, &listeners[i]);
+        if (err)
+            goto fail;
     }
-
-    pr_info("khttpd started: port=%u backlog=%u workers=%d\n",
-            port, backlog, workers);
+    for (i = 0; i < workers; ++i) {
+        if (fail_start_after == (int)i) {
+            err = -EIO;
+            goto fail;
+        }
+        pool[i].listener = listeners[i % shards];
+        if (prealloc) {
+            pool[i].buffer = kmalloc(KH_HEADER_CAP, GFP_KERNEL);
+            if (!pool[i].buffer) {
+                err = -ENOMEM;
+                goto fail;
+            }
+        }
+        pool[i].task = kthread_create(http_server_daemon, &pool[i], "khttpd");
+        if (IS_ERR(pool[i].task)) {
+            err = PTR_ERR(pool[i].task);
+            pool[i].task = NULL;
+            goto fail;
+        }
+        /* A task may exit before stop_server reaches it: own a reference. */
+        get_task_struct(pool[i].task);
+        wake_up_process(pool[i].task);
+    }
+    if (fail_start_after == (int)workers) {
+        err = -EIO;
+        goto fail;
+    }
+    pr_info("ready bind=%s port=%hu workers=%u shards=%u prealloc=%d keep_alive=%d\n",
+            bind_addr, port, workers, shards, prealloc, keep_alive);
     return 0;
-
-bail_open:
-    for (i = 0; i < workers; i++) {
-        if (http_servers && http_servers[i]) {
-            send_sig(SIGTERM, http_servers[i], 1);
-            kthread_stop(http_servers[i]);
-        }
-        if (listen_sockets && listen_sockets[i])
-            close_listen_socket(listen_sockets[i]);
-    }
-bail_alloc:
-    kfree(http_servers);
-    kfree(params);
-    kfree(listen_sockets);
-    mempool_destroy(http_buf_pool);
+fail:
+    stop_server();
     return err;
 }
 
 static void __exit khttpd_exit(void)
 {
-    int i;
-    if (http_servers) {
-        for (i = 0; i < workers; i++) {
-            if (http_servers[i]) {
-                send_sig(SIGTERM, http_servers[i], 1);
-                kthread_stop(http_servers[i]);
-            }
-        }
-    }
-    if (listen_sockets) {
-        for (i = 0; i < workers; i++)
-            if (listen_sockets[i])
-                close_listen_socket(listen_sockets[i]);
-    }
-
-    kfree(http_servers);
-    kfree(params);
-    kfree(listen_sockets);
-
-    if (http_buf_pool)
-        mempool_destroy(http_buf_pool);
-
-    pr_info("module unloaded\n");
+    stop_server();
+    pr_info("stopped after joining all workers\n");
 }
-
 module_init(khttpd_init);
 module_exit(khttpd_exit);
-
 MODULE_LICENSE("Dual MIT/GPL");
-MODULE_AUTHOR("National Cheng Kung University, Taiwan");
-MODULE_DESCRIPTION("in-kernel HTTP daemon");
-MODULE_VERSION("0.1");
+MODULE_AUTHOR("NCKU/sysprog21 contributors; Wayne Wu");
+MODULE_DESCRIPTION("Bounded experimental kernel HTTP microserver");
+MODULE_VERSION("0.2");

@@ -1,49 +1,38 @@
-KDIR=/lib/modules/$(shell uname -r)/build
-
-CFLAGS_user = -std=gnu11 -Wall -Wextra -Werror
-LDFLAGS_user = -lpthread
-
-obj-m += khttpd.o
-khttpd-objs := \
-	http_parser.o \
-	http_server.o \
-	main.o
-
-GIT_HOOKS := .git/hooks/applied
-all: $(GIT_HOOKS) http_parser.c htstress
-	make -C $(KDIR) M=$(PWD) modules
-
-$(GIT_HOOKS):
-	@scripts/install-git-hooks
-	@echo
-
-htstress: htstress.c
-	$(CC) $(CFLAGS_user) -o $@ $< $(LDFLAGS_user)
-
-check: all
-	@scripts/test.sh
-
+# SPDX-License-Identifier: MIT
+ifneq ($(KERNELRELEASE),)
+obj-m := khttpd.o
+khttpd-y := main.o http_server.o http_protocol.o http_connection.o
+else
+.DEFAULT_GOAL := all
+KDIR ?= /lib/modules/$(shell uname -r)/build
+CC ?= cc
+USER_CFLAGS := -std=c11 -O2 -g -Wall -Wextra -Werror -pthread
+CORE := http_protocol.c http_connection.c
+HEADERS := http_protocol.h http_connection.h
+.PHONY: all module userspace test check sanitize integration clean
+all: module userspace
+module:
+	$(MAKE) -C "$(KDIR)" M="$(CURDIR)" W=1 modules
+build:
+	mkdir -p $@
+build/reference_server: tools/reference_server.c $(CORE) $(HEADERS) | build
+	$(CC) $(USER_CFLAGS) $(CFLAGS) -o $@ tools/reference_server.c $(CORE) $(LDFLAGS)
+build/unit: tests/unit.c $(CORE) $(HEADERS) | build
+	$(CC) $(USER_CFLAGS) $(CFLAGS) -o $@ tests/unit.c $(CORE) $(LDFLAGS)
+build/integration: tests/integration.c | build
+	$(CC) $(USER_CFLAGS) $(CFLAGS) -o $@ $< $(LDFLAGS)
+userspace: build/reference_server build/unit build/integration
+test check: userspace
+	./build/unit
+	./scripts/test-userspace.sh
+	python3 -m unittest discover -s tests -p 'test_*.py' -v
+sanitize: | build
+	$(CC) $(USER_CFLAGS) -O1 -fsanitize=address,undefined -fno-omit-frame-pointer \
+		-o build/unit-sanitize tests/unit.c $(CORE)
+	ASAN_OPTIONS=detect_leaks=1 ./build/unit-sanitize
+integration: build/integration
+	./build/integration 8081
 clean:
-	make -C $(KDIR) M=$(PWD) clean
-	$(RM) htstress
-
-# Download http_parser.[ch] from nodejs/http-parser repository
-# the inclusion of standard header files such as <string.h> will be replaced
-# with "compat/string.h", which is just a wrapper to Linux kernel headers.
-# TODO: rewrite with elegant scripts
-http_parser.c:
-	wget -q https://raw.githubusercontent.com/nodejs/http-parser/main/http_parser.c
-	@sed -i 's/#include <assert.h>/#include "compat\/assert.h"/' $@
-	@sed -i 's/#include <stddef.h>/#include "compat\/stddef.h"/' $@
-	@sed -i 's/#include <ctype.h>/#include "compat\/ctype.h"/' $@
-	@sed -i 's/#include <string.h>/#include "compat\/string.h"/' $@
-	@sed -i 's/#include <limits.h>/#include "compat\/limits.h"/' $@
-	@sed -i -E 's@/\*[[:space:]]*fall[[:space:]-]*through[[:space:]]*\*/@fallthrough;@Ig' $@
-	@echo "File $@ was patched."
-	wget -q https://raw.githubusercontent.com/nodejs/http-parser/main/http_parser.h
-	@sed -i 's/#include <stddef.h>/#include "compat\/stddef.h"/' http_parser.h
-	@sed -i 's/#include <stdint.h>/#include "compat\/stdint.h"/' http_parser.h
-	@echo "File http_parser.h was patched."
-
-distclean: clean
-	$(RM) http_parser.c http_parser.h
+	$(RM) -r build
+	$(RM) *.o *.ko *.mod *.mod.c Module.symvers modules.order .*.cmd .*.d
+endif

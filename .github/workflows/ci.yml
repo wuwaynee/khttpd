@@ -1,42 +1,73 @@
-name: Lint
+name: correctness
 
 on:
-  workflow_dispatch: {}  # manual trigger
   pull_request:
-    paths:
-      - "**/*.c"
-      - "**/*.h"
-      - ".clang-format"
-      - "README.md"
   push:
-    branches: [ main ]
-    paths:
-      - "**/*.c"
-      - "**/*.h"
-      - ".clang-format"
-      - "README.md"
+    branches: [main, "fix/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: correctness-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  clang-format:
-    runs-on: ubuntu-latest
-    continue-on-error: true  # never fail the workflow
+  userspace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Install clang-format
+      - name: Install test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format
-      - name: Check formatting (non-blocking)
+          sudo apt-get install -y build-essential clang ripgrep python3
+      - name: Shared engine and userspace integration
+        run: make test
+      - name: Address and undefined-behavior sanitizers
+        run: make sanitize
+      - name: Bounded parser fuzz smoke test
         run: |
-          files="$(git ls-files '*.c' '*.h')"
-          if [ -z "$files" ]; then
-            echo "No C/C++ files."; exit 0
-          fi
-          # Dry-run formatting; if there's diff, just print a warning and pass.
-          set +e
-          clang-format -n --Werror $files
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::clang-format suggested changes (not failing the job)"
-            exit 0
-          fi
+          clang -std=c11 -g -O1 -fsanitize=fuzzer,address,undefined \
+            tests/fuzz_protocol.c http_protocol.c -o build/fuzz
+          ./build/fuzz -max_total_time=20 -max_len=8193
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: userspace-logs
+          path: build/*.log
+  kernel:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install matching guest kernel and tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential linux-headers-generic \
+            linux-image-generic busybox-static cpio qemu-system-x86 ripgrep
+      - name: Build against guest headers
+        run: |
+          image=$(printf '%s\n' /boot/vmlinuz-* | sort -V | tail -n 1)
+          release=$(basename "$image")
+          release=${release#vmlinuz-}
+          make module KDIR="/lib/modules/$release/build"
+          mkdir -p build
+          sudo install -m 0644 "$image" build/vmlinuz
+          printf '%s\n' "$release" > build/kernel-release.txt
+          modinfo khttpd.ko > build/modinfo.txt
+      - name: Protocol, partial-init and active-unload tests in QEMU
+        run: ./scripts/ci-vm.sh "$PWD/build/vmlinuz"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kernel-${{ matrix.os }}
+          path: |
+            build/vm.log
+            build/kernel-release.txt
+            build/modinfo.txt
