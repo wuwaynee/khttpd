@@ -74,8 +74,8 @@ def summarize(directory):
         stats["all_runs_below_historical_p50"] = max(r["p50_ms"] for r in values) <= TARGETS["p50_ms"]
         stats["all_runs_below_historical_p99"] = max(r["p99_ms"] for r in values) <= TARGETS["p99_ms"]
         result["profiles"][name] = stats
-    if "framed_close512" in groups:
-        base = {r["repetition"]: r for r in groups["framed_close512"]}
+    if "matched_close512" in groups:
+        base = {r["repetition"]: r for r in groups["matched_close512"]}
         for name in ("legacy_optimized1", "legacy_optimized4", "hardened1", "hardened4"):
             if name not in groups:
                 continue
@@ -118,18 +118,16 @@ def main():
             f"{s['p50_ms']['median']:.3f} | {s['p99_ms']['median']:.3f} | "
             f"{s['socket_error_events']['median']:.0f} | "
             f"{s['req_s']['minimum']:.2f}–{s['req_s']['maximum']:.2f} |")
-    lines.extend(["", "Ratios use the framed_close512 control in the same repetition.", ""])
+    lines.extend(["", "Ratios use the matched_close512 control in the same repetition.", ""])
     for name, s in result["paired_comparisons"].items():
         lines.append(f"- {name}: median paired throughput {s['throughput']['median']:.2f}x "
             f"(range {s['throughput']['minimum']:.2f}–{s['throughput']['maximum']:.2f}x); "
             f"p50 reduction {100*s['p50_reduction']['median']:.1f}%; "
             f"p99 reduction {100*s['p99_reduction']['median']:.1f}%.")
     lines.extend(["",
-        "historical_close112 reconstructs the historical log's response-size shape, "
-        "including two bytes beyond Content-Length. It is a diagnostic baseline, "
-        "not a claim to have recovered the exact old build.",
-        "framed_close110 repairs that framing while retaining close/log/clear/single-listener behavior. "
-        "framed_close512 also raises its backlog to the optimized value to avoid attributing "
+        "historical_close112 preserves the valid 112-byte close/log/clear/single-listener "
+        "behavior from source 3fbe63b. It matches the recorded old response-size shape.",
+        "matched_close512 raises its backlog to the optimized value to avoid attributing "
         "simple accept-queue capacity to the remaining optimizations. "
         "It is the conservative primary control.",
         "Socket error events are reported, never omitted; latency percentiles are for "

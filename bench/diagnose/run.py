@@ -17,19 +17,23 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILES = {
-    # The 112-byte shape matches the old log, but exact old build is unknown.
-    "historical_close112": dict(kind="legacy", keep_alive=0, log_requests=1,
+    # The oldest source oversent CRLF; the measured historical 112-byte frame did not.
+    "ancient_oversend114": dict(kind="legacy", keep_alive=0, log_requests=1,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=1),
-    "framed_close110": dict(kind="legacy", keep_alive=0, log_requests=1,
+    "historical_close112": dict(kind="legacy", keep_alive=0, log_requests=1,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=0),
-    "framed_close512": dict(kind="legacy", keep_alive=0, log_requests=1,
+    "matched_close512": dict(kind="legacy", keep_alive=0, log_requests=1,
         clear_buffer=1, shards=1, backlog=512, use_pool=1, extra_crlf=0),
-    "no_logging": dict(kind="legacy", keep_alive=0, log_requests=0,
+    "close_no_logging": dict(kind="legacy", keep_alive=0, log_requests=0,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=0),
     "keepalive_with_logging": dict(kind="legacy", keep_alive=1, log_requests=1,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=0),
     "keepalive_no_logging": dict(kind="legacy", keep_alive=1, log_requests=0,
         clear_buffer=1, shards=1, backlog=100, use_pool=1, extra_crlf=0),
+    "keepalive_logged512": dict(kind="legacy", keep_alive=1, log_requests=1,
+        clear_buffer=1, shards=1, backlog=512, use_pool=1, extra_crlf=0),
+    "keepalive_quiet512": dict(kind="legacy", keep_alive=1, log_requests=0,
+        clear_buffer=1, shards=1, backlog=512, use_pool=1, extra_crlf=0),
     "legacy_optimized1": dict(kind="legacy", keep_alive=1, log_requests=0,
         clear_buffer=0, shards=1, backlog=512, use_pool=1, extra_crlf=0),
     "legacy_optimized4": dict(kind="legacy", keep_alive=1, log_requests=0,
@@ -112,19 +116,38 @@ def snap(module):
                 softirqs=read("/proc/softirqs"))
 
 
-def wait_ready():
+def wait_ready(config):
     for _ in range(200):
         try:
             with socket.create_connection(("127.0.0.1", 8081), .2) as connection:
-                connection.sendall(
-                    b"GET / HTTP/1.1\r\nHost: a\r\nConnection: close\r\n\r\n")
-                if b"200 OK" in connection.recv(512):
-                    return
+                connection.sendall(b"GET / HTTP/1.1\r\nHost: a\r\n\r\n")
+                data = b""
+                while b"\r\n\r\n" not in data:
+                    block = connection.recv(512)
+                    if not block:
+                        raise RuntimeError("truncated response header")
+                    data += block
+                header, body = data.split(b"\r\n\r\n", 1)
+                while len(body) < 12:
+                    block = connection.recv(512)
+                    if not block:
+                        raise RuntimeError("truncated response body")
+                    body += block
+                if not header.startswith(b"HTTP/1.1 200 OK\r\n"):
+                    raise RuntimeError("unexpected response status")
+                if b"\r\nContent-Length: 12" not in header or body[:12] != b"Hello World!":
+                    raise RuntimeError("unexpected body framing")
+                expected = 117 if config["keep_alive"] else 112
+                actual = len(header) + 4 + 12
+                if actual != expected:
+                    raise RuntimeError(f"unexpected frame length {actual}, expected {expected}")
+                return dict(frame_bytes=actual, connection_policy=(
+                    "keep-alive" if config["keep_alive"] else "close"),
+                    observed_extra_bytes=len(body)-12)
         except OSError:
             pass
         time.sleep(.05)
     raise RuntimeError("server not ready")
-
 
 def unload(module):
     # Legacy connection module refs forbid unloading with live worker code.
@@ -217,7 +240,7 @@ def main():
                 try:
                     run(argv)
                     loaded = module
-                    wait_ready()
+                    record['response_shape'] = wait_ready(config)
                     validate_cmd = [str(wrk), "-t4", "-c256", "-d2s", "--latency",
                         "--timeout", "2s", "-s", str(ROOT / "bench/validate.lua"),
                         "http://127.0.0.1:8081/"]

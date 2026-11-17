@@ -14,7 +14,7 @@ concurrency:
 jobs:
   measure:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -38,10 +38,18 @@ jobs:
             M="$PWD/bench/diagnose/legacy" W=1 modules
           modinfo bench/diagnose/legacy/khttpd_legacy.ko \
             > build/performance/legacy-modinfo.txt
-      - name: Run matched historical and hardened pilot
+      - name: Five paired 30-second primary measurements
         run: |
-          python3 bench/diagnose/run.py --output build/performance \
-            --duration 5 --warmup 2 --repetitions 1
+          python3 bench/diagnose/run.py --output build/performance/primary \
+            --duration 30 --warmup 5 --repetitions 5 \
+            --profiles historical_close112,matched_close512,legacy_optimized4,hardened4
+          python3 bench/diagnose/summarize.py build/performance/primary
+      - name: Three repeated mechanism ablations
+        run: |
+          python3 bench/diagnose/run.py --output build/performance/ablations \
+            --duration 10 --warmup 2 --repetitions 3 \
+            --profiles close_no_logging,keepalive_logged512,keepalive_quiet512,legacy_optimized1,legacy_no_pool,hardened1,hardened_alloc,hardened_close
+          python3 bench/diagnose/summarize.py build/performance/ablations
       - name: Capture diagnostic kernel messages on failure
         if: failure()
         run: sudo dmesg | tail -n 80
