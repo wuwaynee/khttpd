@@ -32,21 +32,19 @@ jobs:
           test -d "/lib/modules/$(uname -r)/build"
           make module
           modinfo khttpd.ko > build/performance/modinfo.txt
-      - name: Measure current kernel implementation, 4 threads / 256 connections
+      - name: Build recovered historical hot path
         run: |
-          set -euo pipefail
-          cleanup() { sudo rmmod khttpd || true; }
-          trap cleanup EXIT
-          sudo insmod khttpd.ko workers=512 shards=1 keep_alive=1 prealloc=1 \
-            max_requests=1000000 timeout_ms=5000
-          wrk -t4 -c256 -d5s --latency --timeout 2s \
-            -s bench/validate.lua http://127.0.0.1:8081/ \
-            | tee build/performance/current-validated.txt
-          wrk -t4 -c256 -d5s --latency --timeout 2s http://127.0.0.1:8081/ \
-            | tee build/performance/current-plain.txt
-          cat /sys/module/khttpd/parameters/stats | tee build/performance/current-stats.txt
-          sudo rmmod khttpd
-          trap - EXIT
+          make -C "/lib/modules/$(uname -r)/build" \
+            M="$PWD/bench/diagnose/legacy" W=1 modules
+          modinfo bench/diagnose/legacy/khttpd_legacy.ko \
+            > build/performance/legacy-modinfo.txt
+      - name: Run matched historical and hardened pilot
+        run: |
+          python3 bench/diagnose/run.py --output build/performance \
+            --duration 5 --warmup 1 --repetitions 1
+      - name: Capture diagnostic kernel messages on failure
+        if: failure()
+        run: sudo dmesg | tail -n 80
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with:
