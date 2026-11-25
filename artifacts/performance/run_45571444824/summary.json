@@ -1,0 +1,656 @@
+{
+  "source_commit": "0bfbe252a283102e5638b9004d5ece366e40a2f9",
+  "environment": {
+    "uname": "Linux ip-10-0-129-120 7.0.0-1014-aws #14~24.04.1-Ubuntu SMP PREEMPT Fri Sep 18 21:24:59 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "lscpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           48 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  4\nOn-line CPU(s) list:                     0-3\nVendor ID:                               GenuineIntel\nModel name:                              Intel(R) Xeon(R) 6975P-C\nCPU family:                              6\nModel:                                   173\nThread(s) per core:                      2\nCore(s) per socket:                      2\nSocket(s):                               1\nStepping:                                1\nBogoMIPS:                                5400.00\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat vnmi avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\nVirtualization:                          VT-x\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               96 KiB (2 instances)\nL1i cache:                               128 KiB (2 instances)\nL2 cache:                                4 MiB (2 instances)\nL3 cache:                                480 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-3\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+    "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+    "cpuinfo": "processor\t: 0\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 173\nmodel name\t: Intel(R) Xeon(R) 6975P-C\nstepping\t: 1\nmicrocode\t: 0x1000434\ncpu MHz\t\t: 3601.577\ncache size\t: 491520 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 0\ncpu cores\t: 2\napicid\t\t: 0\ninitial apicid\t: 0\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 36\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat vnmi avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb ept_5level flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid shadow_vmcs pml tsc_scaling usr_wait_pause\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs bhi spectre_v2_user\nbogomips\t: 5400.00\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 1\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 173\nmodel name\t: Intel(R) Xeon(R) 6975P-C\nstepping\t: 1\nmicrocode\t: 0x1000434\ncpu MHz\t\t: 3573.366\ncache size\t: 491520 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 1\ncpu cores\t: 2\napicid\t\t: 2\ninitial apicid\t: 2\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 36\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat vnmi avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb ept_5level flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid shadow_vmcs pml tsc_scaling usr_wait_pause\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs bhi spectre_v2_user\nbogomips\t: 5400.00\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 2\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 173\nmodel name\t: Intel(R) Xeon(R) 6975P-C\nstepping\t: 1\nmicrocode\t: 0x1000434\ncpu MHz\t\t: 3875.353\ncache size\t: 491520 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 0\ncpu cores\t: 2\napicid\t\t: 1\ninitial apicid\t: 1\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 36\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat vnmi avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb ept_5level flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid shadow_vmcs pml tsc_scaling usr_wait_pause\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs bhi spectre_v2_user\nbogomips\t: 5400.00\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 3\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 173\nmodel name\t: Intel(R) Xeon(R) 6975P-C\nstepping\t: 1\nmicrocode\t: 0x1000434\ncpu MHz\t\t: 3443.034\ncache size\t: 491520 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 1\ncpu cores\t: 2\napicid\t\t: 3\ninitial apicid\t: 3\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 36\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq monitor vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd ida arat vnmi avx512vbmi umip pku ospke waitpkg avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid bus_lock_detect cldemote movdiri movdir64b md_clear serialize amx_bf16 avx512_fp16 amx_tile amx_int8 flush_l1d arch_capabilities\nvmx flags\t: vnmi preemption_timer posted_intr invvpid ept_x_only ept_ad ept_1gb ept_5level flexpriority apicv tsc_offset vtpr mtf vapic ept vpid unrestricted_guest vapic_reg vid shadow_vmcs pml tsc_scaling usr_wait_pause\nbugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs bhi spectre_v2_user\nbogomips\t: 5400.00\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\n",
+    "meminfo": "MemTotal:       16078424 kB\nMemFree:        13747044 kB\nMemAvailable:   14981060 kB\nBuffers:           61660 kB\nCached:          1450368 kB\nSwapCached:            0 kB\nActive:           925864 kB\nInactive:         835264 kB\nActive(anon):     303604 kB\nInactive(anon):        0 kB\nActive(file):     622260 kB\nInactive(file):   835264 kB\nUnevictable:       45588 kB\nMlocked:           43712 kB\nSwapTotal:       3145724 kB\nSwapFree:        3145724 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:             74400 kB\nWriteback:             0 kB\nAnonPages:        294752 kB\nMapped:           363528 kB\nShmem:             45836 kB\nKReclaimable:      56984 kB\nSlab:             133716 kB\nSReclaimable:      56984 kB\nSUnreclaim:        76732 kB\nKernelStack:        4696 kB\nPageTables:         6708 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    11184936 kB\nCommitted_AS:    2220364 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       38900 kB\nVmallocChunk:          0 kB\nPercpu:             2448 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:     67584 kB\nFilePmdMapped:         0 kB\nCmaTotal:              0 kB\nCmaFree:         1767424 kB\nUnaccepted:            0 kB\nBalloon:               0 kB\nGPUActive:             0 kB\nGPUReclaim:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      147888 kB\nDirectMap2M:     4796416 kB\nDirectMap1G:    11534336 kB\n",
+    "cmdline": "BOOT_IMAGE=/vmlinuz-7.0.0-1014-aws root=UUID=7bbbc619-f44a-4d70-9514-033a92baf17e ro console=tty1 console=ttyS0 nvme_core.io_timeout=4294967295 rootflags=nobarrier,data=writeback,journal_async_commit,commit=30\n",
+    "boot_id": "18548ed7-8215-417c-97f2-3fac986962eb\n",
+    "printk": "4\t4\t1\t7\n",
+    "ftrace": "[Errno 13] Permission denied: '/sys/kernel/tracing/current_tracer'",
+    "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "build_env": {
+      "CC": "",
+      "CFLAGS": "",
+      "LDFLAGS": "",
+      "KCFLAGS": ""
+    },
+    "wrk_version": "wrk debian/4.1.0-4build2 [epoll] Copyright (C) 2012 Will Glozer\nUsage: wrk <options> <url>                            \n  Options:                                            \n    -c, --connections <N>  Connections to keep open   \n    -d, --duration    <T>  Duration of test           \n    -t, --threads     <N>  Number of threads to use   \n                                                      \n    -s, --script      <S>  Load Lua script file       \n    -H, --header      <H>  Add header to request      \n        --latency          Print latency statistics   \n        --timeout     <T>  Socket/request timeout     \n    -v, --version          Print version details      \n                                                      \n  Numeric arguments may include a SI unit (1k, 1M, 1G)\n  Time arguments may include a time unit (2s, 2m, 2h)\n",
+    "hz": 100,
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "repetitions": 5,
+  "duration": 30,
+  "profiles": {
+    "legacy_optimized4": {
+      "runs": 5,
+      "req_s": {
+        "median": 348935.93,
+        "minimum": 346230.72,
+        "maximum": 401914.49
+      },
+      "avg_ms": {
+        "median": 0.37794,
+        "minimum": 0.32661,
+        "maximum": 0.39605
+      },
+      "p50_ms": {
+        "median": 0.332,
+        "minimum": 0.316,
+        "maximum": 0.35000000000000003
+      },
+      "p99_ms": {
+        "median": 1.02,
+        "minimum": 0.549,
+        "maximum": 1.66
+      },
+      "socket_error_events": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "system_context_switches_per_request": {
+        "median": 1.468178260223903,
+        "minimum": 1.4599248113504426,
+        "maximum": 1.9431119935950665
+      },
+      "system_active_cpu_s": {
+        "median": 119.98,
+        "minimum": 118.38,
+        "maximum": 120.43
+      },
+      "all_runs_above_historical_throughput": true,
+      "all_runs_below_historical_p50": true,
+      "all_runs_below_historical_p99": true
+    },
+    "hardened4": {
+      "runs": 5,
+      "req_s": {
+        "median": 356433.84,
+        "minimum": 344017.39,
+        "maximum": 394552.65
+      },
+      "avg_ms": {
+        "median": 0.37564,
+        "minimum": 0.33138,
+        "maximum": 0.40336
+      },
+      "p50_ms": {
+        "median": 0.319,
+        "minimum": 0.291,
+        "maximum": 0.328
+      },
+      "p99_ms": {
+        "median": 1.43,
+        "minimum": 0.618,
+        "maximum": 1.59
+      },
+      "socket_error_events": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "system_context_switches_per_request": {
+        "median": 1.4404689032015452,
+        "minimum": 1.3812527118778946,
+        "maximum": 1.7803725576288678
+      },
+      "system_active_cpu_s": {
+        "median": 119.59,
+        "minimum": 119.25,
+        "maximum": 120.01
+      },
+      "all_runs_above_historical_throughput": true,
+      "all_runs_below_historical_p50": true,
+      "all_runs_below_historical_p99": true
+    },
+    "matched_close512": {
+      "runs": 5,
+      "req_s": {
+        "median": 14080.95,
+        "minimum": 14027.2,
+        "maximum": 14119.9
+      },
+      "avg_ms": {
+        "median": 21.85,
+        "minimum": 21.14,
+        "maximum": 22.51
+      },
+      "p50_ms": {
+        "median": 12.05,
+        "minimum": 11.09,
+        "maximum": 13.55
+      },
+      "p99_ms": {
+        "median": 93.4,
+        "minimum": 82.47,
+        "maximum": 94.53
+      },
+      "socket_error_events": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0
+      },
+      "system_context_switches_per_request": {
+        "median": 12.33771402414005,
+        "minimum": 12.283997690017372,
+        "maximum": 12.415288019790317
+      },
+      "system_active_cpu_s": {
+        "median": 89.37,
+        "minimum": 88.57,
+        "maximum": 89.53
+      },
+      "all_runs_above_historical_throughput": false,
+      "all_runs_below_historical_p50": false,
+      "all_runs_below_historical_p99": false
+    }
+  },
+  "paired_comparisons": {
+    "legacy_optimized4": {
+      "throughput": {
+        "median": 24.8756651363066,
+        "minimum": 24.61383242893937,
+        "maximum": 28.464400597737946,
+        "repetitions": [
+          28.464400597737946,
+          24.694212393339935,
+          24.61383242893937,
+          24.8756651363066,
+          25.34921799566995
+        ]
+      },
+      "p50_reduction": {
+        "median": 0.9716182572614108,
+        "minimum": 0.970063119927863,
+        "maximum": 0.9750394944707741,
+        "repetitions": [
+          0.9712134632418069,
+          0.9750394944707741,
+          0.974169741697417,
+          0.9716182572614108,
+          0.970063119927863
+        ]
+      },
+      "p99_reduction": {
+        "median": 0.9889656844913302,
+        "minimum": 0.9822876653862569,
+        "maximum": 0.9941220556745182,
+        "repetitions": [
+          0.9941220556745182,
+          0.9822876653862569,
+          0.9890003235198965,
+          0.9889656844913302,
+          0.9886808420607215
+        ]
+      }
+    },
+    "hardened4": {
+      "throughput": {
+        "median": 25.313195487520375,
+        "minimum": 24.456484941893905,
+        "maximum": 27.943020134703506,
+        "repetitions": [
+          27.943020134703506,
+          25.313195487520375,
+          24.456484941893905,
+          24.707311509068095,
+          25.792440270351893
+        ]
+      },
+      "p50_reduction": {
+        "median": 0.9735269709543568,
+        "minimum": 0.9712134632418069,
+        "maximum": 0.9785239852398524,
+        "repetitions": [
+          0.9712134632418069,
+          0.9740916271721959,
+          0.9785239852398524,
+          0.9735269709543568,
+          0.972497745716862
+        ]
+      },
+      "p99_reduction": {
+        "median": 0.9837088754892627,
+        "minimum": 0.9826603613435189,
+        "maximum": 0.9933832976445396,
+        "repetitions": [
+          0.9933832976445396,
+          0.9887964148527528,
+          0.9828534454868975,
+          0.9826603613435189,
+          0.9837088754892627
+        ]
+      }
+    }
+  },
+  "runs": [
+    {
+      "profile": "legacy_optimized4",
+      "repetition": 0,
+      "requests": 12098174,
+      "seconds": 30.1,
+      "req_s": 401914.49,
+      "avg_ms": 0.32661,
+      "p50_ms": 0.325,
+      "p99_ms": 0.549,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.9431119935950665,
+      "system_active_cpu_s": 120.43,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 257,
+        "spawned": 257,
+        "responses": 12098428,
+        "send_bytes": 1415516076,
+        "buffer_alloc_calls": 257,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "hardened4",
+      "repetition": 0,
+      "requests": 11838598,
+      "seconds": 30.01,
+      "req_s": 394552.65,
+      "avg_ms": 0.33138,
+      "p50_ms": 0.325,
+      "p99_ms": 0.618,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.7803725576288678,
+      "system_active_cpu_s": 120.01,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "responses": 11838783,
+        "ok": 11838783,
+        "protocol_errors": 0,
+        "io_errors": 185,
+        "timeouts": 0,
+        "alloc_errors": 0
+      }
+    },
+    {
+      "profile": "matched_close512",
+      "repetition": 0,
+      "requests": 425036,
+      "seconds": 30.1,
+      "req_s": 14119.9,
+      "avg_ms": 22.51,
+      "p50_ms": 11.29,
+      "p99_ms": 93.4,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 12.40233062611167,
+      "system_active_cpu_s": 89.37,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 425293,
+        "spawned": 425293,
+        "responses": 425233,
+        "send_bytes": 47626096,
+        "buffer_alloc_calls": 425293,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "legacy_optimized4",
+      "repetition": 1,
+      "requests": 10437550,
+      "seconds": 30.02,
+      "req_s": 347717.97,
+      "avg_ms": 0.39605,
+      "p50_ms": 0.316,
+      "p99_ms": 1.66,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.468178260223903,
+      "system_active_cpu_s": 118.38,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 257,
+        "spawned": 257,
+        "responses": 10437706,
+        "send_bytes": 1221211602,
+        "buffer_alloc_calls": 257,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "hardened4",
+      "repetition": 1,
+      "requests": 10698491,
+      "seconds": 30.02,
+      "req_s": 356433.84,
+      "avg_ms": 0.3707,
+      "p50_ms": 0.328,
+      "p99_ms": 1.05,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.5305326704485707,
+      "system_active_cpu_s": 119.59,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "responses": 10698626,
+        "ok": 10698626,
+        "protocol_errors": 0,
+        "io_errors": 135,
+        "timeouts": 0,
+        "alloc_errors": 0
+      }
+    },
+    {
+      "profile": "matched_close512",
+      "repetition": 1,
+      "requests": 423803,
+      "seconds": 30.1,
+      "req_s": 14080.95,
+      "avg_ms": 21.85,
+      "p50_ms": 12.66,
+      "p99_ms": 93.72,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 12.315205413836146,
+      "system_active_cpu_s": 89.27,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 424060,
+        "spawned": 424060,
+        "responses": 423977,
+        "send_bytes": 47485424,
+        "buffer_alloc_calls": 424060,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "hardened4",
+      "repetition": 2,
+      "requests": 10329558,
+      "seconds": 30.03,
+      "req_s": 344017.39,
+      "avg_ms": 0.40336,
+      "p50_ms": 0.291,
+      "p99_ms": 1.59,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.3812527118778946,
+      "system_active_cpu_s": 119.28,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "responses": 10329732,
+        "ok": 10329732,
+        "protocol_errors": 0,
+        "io_errors": 174,
+        "timeouts": 0,
+        "alloc_errors": 0
+      }
+    },
+    {
+      "profile": "legacy_optimized4",
+      "repetition": 2,
+      "requests": 10421843,
+      "seconds": 30.1,
+      "req_s": 346230.72,
+      "avg_ms": 0.38069000000000003,
+      "p50_ms": 0.35000000000000003,
+      "p99_ms": 1.02,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.483577041028156,
+      "system_active_cpu_s": 120.12,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 257,
+        "spawned": 257,
+        "responses": 10421972,
+        "send_bytes": 1219370724,
+        "buffer_alloc_calls": 257,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "matched_close512",
+      "repetition": 2,
+      "requests": 422514,
+      "seconds": 30.04,
+      "req_s": 14066.51,
+      "avg_ms": 21.72,
+      "p50_ms": 13.55,
+      "p99_ms": 92.73,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 12.283997690017372,
+      "system_active_cpu_s": 88.57,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 422771,
+        "spawned": 422771,
+        "responses": 422759,
+        "send_bytes": 47349008,
+        "buffer_alloc_calls": 422771,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "hardened4",
+      "repetition": 3,
+      "requests": 10401885,
+      "seconds": 30.01,
+      "req_s": 346574.4,
+      "avg_ms": 0.39287,
+      "p50_ms": 0.319,
+      "p99_ms": 1.43,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.422759432545159,
+      "system_active_cpu_s": 119.25,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "responses": 10402072,
+        "ok": 10402072,
+        "protocol_errors": 0,
+        "io_errors": 187,
+        "timeouts": 0,
+        "alloc_errors": 0
+      }
+    },
+    {
+      "profile": "matched_close512",
+      "repetition": 3,
+      "requests": 421623,
+      "seconds": 30.06,
+      "req_s": 14027.2,
+      "avg_ms": 21.14,
+      "p50_ms": 12.05,
+      "p99_ms": 82.47,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 12.33771402414005,
+      "system_active_cpu_s": 89.52,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 421880,
+        "spawned": 421880,
+        "responses": 421819,
+        "send_bytes": 47243728,
+        "buffer_alloc_calls": 421880,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "legacy_optimized4",
+      "repetition": 3,
+      "requests": 10502936,
+      "seconds": 30.1,
+      "req_s": 348935.93,
+      "avg_ms": 0.37794,
+      "p50_ms": 0.342,
+      "p99_ms": 0.91,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.4663376031235456,
+      "system_active_cpu_s": 119.66,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 257,
+        "spawned": 257,
+        "responses": 10503115,
+        "send_bytes": 1228864455,
+        "buffer_alloc_calls": 257,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "matched_close512",
+      "repetition": 4,
+      "requests": 424450,
+      "seconds": 30.09,
+      "req_s": 14106.06,
+      "avg_ms": 22.5,
+      "p50_ms": 11.09,
+      "p99_ms": 94.53,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 12.415288019790317,
+      "system_active_cpu_s": 89.53,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 424707,
+        "spawned": 424707,
+        "responses": 424648,
+        "send_bytes": 47560576,
+        "buffer_alloc_calls": 424707,
+        "send_errors": 0
+      }
+    },
+    {
+      "profile": "hardened4",
+      "repetition": 4,
+      "requests": 10924131,
+      "seconds": 30.03,
+      "req_s": 363829.71,
+      "avg_ms": 0.37564,
+      "p50_ms": 0.305,
+      "p99_ms": 1.54,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.4404689032015452,
+      "system_active_cpu_s": 119.7,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "responses": 10924273,
+        "ok": 10924273,
+        "protocol_errors": 0,
+        "io_errors": 142,
+        "timeouts": 0,
+        "alloc_errors": 0
+      }
+    },
+    {
+      "profile": "legacy_optimized4",
+      "repetition": 4,
+      "requests": 10731141,
+      "seconds": 30.01,
+      "req_s": 357577.59,
+      "avg_ms": 0.36866000000000004,
+      "p50_ms": 0.332,
+      "p99_ms": 1.07,
+      "socket_errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0
+      },
+      "socket_error_events": 0,
+      "system_context_switches_per_request": 1.4599248113504426,
+      "system_active_cpu_s": 119.98,
+      "steal_cpu_s": 0.0,
+      "module_delta": {
+        "accepted": 257,
+        "spawned": 257,
+        "responses": 10731277,
+        "send_bytes": 1255559409,
+        "buffer_alloc_calls": 257,
+        "send_errors": 0
+      }
+    }
+  ]
+}
