@@ -61,7 +61,13 @@ Later validation also rejects nonzero load-generator exit status, malformed erro
 
 Use a disposable x86-64 Linux VM with matching headers and module-loading privileges. The recorded native measurements use the entire 4-vCPU VM for both wrk and the servers; there is no emulated CPU or separately scheduled QEMU guest in this throughput test. The historical diagnostic adapter is tested on the native kernel recorded in the result; the hardened module also has its separate kernel compatibility matrix.
 
+The commands below use reviewed revision ae5f9f2ea676071fcde013fd1eea18a3fa54483f, which includes the startup and evidence-validation fixes. Fetching the commit explicitly avoids depending on a retained working branch after a squash merge.
+
 ~~~bash
+git clone https://github.com/wuwaynee/khttpd.git
+cd khttpd
+git fetch origin ae5f9f2ea676071fcde013fd1eea18a3fa54483f
+git checkout --detach ae5f9f2ea676071fcde013fd1eea18a3fa54483f
 sudo apt-get install -y build-essential python3 ripgrep wrk \
   "linux-headers-$(uname -r)"
 make module
@@ -74,7 +80,7 @@ python3 bench/diagnose/run.py --output build/my-performance \
 python3 bench/diagnose/summarize.py build/my-performance
 ~~~
 
-For the primary frozen implementation, clone the repository and check out c1dda1ae93c1deb3cf2cc258051a7113f13a0094 before the commands above. To re-run the independent matched matrix, use the exact profile list in .github/workflows/ablation.yml at 9ee238ad74fb65368d876fd56228a0944c307147.
+The published primary and matched-control archives retain their measured sources c1dda1ae93c1deb3cf2cc258051a7113f13a0094 and 9ee238ad74fb65368d876fd56228a0944c307147. Fetch either SHA explicitly to inspect that historical snapshot. Those versions predate the historical adapter startup fix. New executions should use the reviewed revision above and record their own source identity. To repeat the matched feature matrix, use the profile list, duration and repetitions in .github/workflows/ablation.yml on that reviewed checkout.
 
 The checkout must be clean and committed. The runner refuses preexisting modules or an occupied port. Source commit, binary hashes, wrk/compiler identities, kernel, CPU topology, memory, kernel command line, CPU snapshots, module arguments, actual run order, raw output, validation and file checksums are captured. The performance workflow automates this on a fresh hosted VM.
 

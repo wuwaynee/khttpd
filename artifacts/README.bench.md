@@ -9,3 +9,5 @@ The new [native before/after results](../docs/PERFORMANCE.md) have their own rep
 - [Primary five-repeat dataset](performance/run_44002074047/summary.md)
 - [Independent matched mechanism dataset](performance/run_44003646281/summary.md)
 - [Incomplete predecessor, retained and excluded](performance/incomplete_run_44000139898/README.md)
+
+- [Startup/evidence regression verification](performance/run_45571444824/summary.md)

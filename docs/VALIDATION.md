@@ -27,6 +27,8 @@ The [five-repeat primary](https://github.com/wuwaynee/khttpd/actions/runs/440020
 
 Archive SHA-256 digests matched GitHub's artifact digests. Recomputing both summaries from the hash-checked raw logs produced the archived JSON exactly. These measurements are separate from the correctness workflow's one-second smoke test.
 
+A subsequent [native verification run](https://github.com/wuwaynee/khttpd/actions/runs/45571444824) also completed all five 30-second comparison rounds and its exploratory controls after the startup/evidence fixes. Its [permanent archive and scope](PERFORMANCE.md#regression-verification) are kept separately from the original primary and matched-control datasets.
+
 ## Re-run
 
 ~~~bash
