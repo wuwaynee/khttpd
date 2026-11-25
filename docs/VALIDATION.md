@@ -2,7 +2,7 @@
 
 ## Correctness workflow
 
-[Source a7b6a83](https://github.com/wuwaynee/khttpd/tree/a7b6a83d0d15385eb17a4d7aff8e59e81f669c25) passed [all four correctness jobs](https://github.com/wuwaynee/khttpd/actions/runs/44006305301): the shared/userspace suite and three x86-64 kernel-guest jobs. The [workflow](../.github/workflows/ci.yml) pins action revisions and fails on compilation or test errors.
+[Source 5d21bb2](https://github.com/wuwaynee/khttpd/tree/5d21bb2bb0755d496e8ebd70809101ecc64e19b3) passed [all four correctness jobs](https://github.com/wuwaynee/khttpd/actions/runs/45571928789): the shared/userspace suite and three x86-64 kernel-guest jobs. The [workflow](../.github/workflows/ci.yml) pins action revisions and fails on compilation or test errors.
 
 | Check | Coverage |
 |---|---|
@@ -17,7 +17,7 @@
 
 The guest tests exercise (shards,prealloc) = (1,1), (2,0), (2,1); reject invalid parameters; inject partial-start failure after 0, 1 and 8 workers; unload while eight incomplete connections are live; check a two-response connection cap; test idle/partial-header/slow-drip deadlines; and repeat load/unload ten times. Guest logs require KH_VM_PASS and are checked for BUG/WARNING/panic messages.
 
-The runner-kernel job additionally builds the historical adapter and tests its startup in the guest. Four client threads send traffic during twelve injected initialization failures (three rounds at 0, 1, 8 and 16 prepared acceptors). The test requires actual TCP connections, zero response bytes from failed loads, no remaining module/tasks, and successful load/serve/unload before and after the failures. Other kernel jobs exercise the bounded module independently.
+The runner-kernel job additionally builds the historical adapter and tests its startup in the guest. Four client threads send traffic during twelve injected initialization failures (three rounds at 0, 1, 8 and 16 prepared acceptors). The test requires actual TCP connections, zero response bytes from failed loads, no remaining module/tasks, and successful load/serve/unload before and after the failures. In the recorded run above, 52 TCP connections were established during these failures and the zero-response assertion passed. Other kernel jobs exercise the bounded module independently.
 
 [Archived guest excerpts](../artifacts/validation/README.md) retain output from [run 43988760634](https://github.com/wuwaynee/khttpd/actions/runs/43988760634), source fe02cfb0030c4f42de6134134af2ed3e040f6202. That run used Linux 5.15.0-203-generic, 6.8.0-149-generic and 7.0.0-1017-azure. Exact versions for other runs are in their job artifacts.
 
