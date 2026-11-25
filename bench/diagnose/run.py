@@ -6,6 +6,7 @@ import base64
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import random
@@ -90,19 +91,25 @@ def parse(text, validated=False, allow_errors=False):
     qps = float(find(r"^Requests/sec:\s+([0-9.]+)")[1])
     errors = [tuple(map(int, m.groups())) for m in re.finditer(
         r"Socket errors: connect (\d+), read (\d+), write (\d+), timeout (\d+)", text)]
+    if "Socket errors:" in text and not errors:
+        raise ValueError("malformed socket error summary")
     status = re.search(r"Non-2xx or 3xx responses:\s+(\d+)", text)
+    if "Non-2xx or 3xx responses:" in text and not status:
+        raise ValueError("malformed status summary")
     error_counts = [sum(row[i] for row in errors) for i in range(4)]
     if (any(error_counts) and not allow_errors) or (status and int(status[1])):
         raise ValueError("wrk reported errors")
-    if requests <= 0 or qps <= 0:
-        raise ValueError("empty measurement")
+    avg, p50, p99 = latency("Latency"), latency("50%"), latency("99%")
+    if (requests <= 0 or seconds <= 0 or qps <= 0 or
+            not all(math.isfinite(x) and x >= 0 for x in (seconds, qps, avg, p50, p99)) or
+            p99 < p50):
+        raise ValueError("invalid or empty measurement")
     if validated:
         m = find(r"^KH_VALIDATED checked=(\d+) invalid=(\d+)")
         if int(m[1]) != requests or int(m[2]):
             raise ValueError("status/body validation failure")
     return dict(requests=requests, seconds=seconds, req_s=qps,
-                avg_ms=latency("Latency"), p50_ms=latency("50%"),
-                p99_ms=latency("99%"),
+                avg_ms=avg, p50_ms=p50, p99_ms=p99,
                 socket_errors=dict(zip(("connect", "read", "write", "timeout"), error_counts)),
                 socket_error_events=sum(error_counts))
 

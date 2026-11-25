@@ -32,7 +32,7 @@ def summarize(directory):
     rows = []
     for r in m["runs"]:
         key = (r["profile"], r["repetition"])
-        if key in seen or not r.get("complete"):
+        if key in seen or not r.get("complete") or r.get("returncode") != 0:
             raise ValueError("duplicate or failed repetition")
         seen.add(key)
         for filename, hashname in [

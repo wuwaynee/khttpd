@@ -39,6 +39,8 @@ bench/diagnose/legacy keeps the recovered HTTP hot path and feature switches. It
 
 Common repairs apply to every historical configuration: bounded URL copying, terminal zero-send handling, current socket APIs, stable acceptor task references, and connection-owned module references. Workers exit through module_put_and_kthread_exit so their final instructions execute safely after dropping the module reference. The module binds loopback only.
 
+Acceptor tasks remain stopped until every listener and task has been prepared. This keeps connection workers from borrowing the shared pool while a later initialization step can still fail. The fail_start_after test parameter exercises unwind after 0, 1, 8 and 16 prepared acceptors; it is disabled by default and does not change the measured request path.
+
 A long experiment also reproduced a real old lifecycle issue: an accepted connection can outlive the load generator and remain blocked in receive. The diagnostic module now gives accepted sockets a 10-second blocking timeout, longer than wrk's 2-second request timeout. This bounds orphan cleanup without reducing the timeout of a successful measured request. The runner waits for references to drain and never force-unloads the module. The hardened server already has explicit socket ownership, absolute deadlines, shutdown and joins.
 
 These common repairs apply to all recovered historical profiles. The adapter preserves the connection, logging, clearing, listener and allocation switches used by the experiment; it is not byte-identical to an old binary.
@@ -52,6 +54,8 @@ Legacy per-CPU counters record accepted connections, created kthreads, completed
 System CPU time and context-switch snapshots include wrk, server workers and other VM activity. They are workload-level diagnostics, not server-exclusive CPU counters. Kernel send/read error counters sampled after wrk exits can include termination of in-flight work; load-generator socket errors are reported separately. Throughput uses client-completed requests. Latency percentiles describe completed requests, so error counts must be read alongside them.
 
 The summary recomputes metrics from hash-checked raw files, requires every configured repetition exactly once, rejects incomplete experiments and body/status validation failures, and preserves socket-error counts. It reports medians and observed ranges; run-level p99 medians are not pooled p99 values or a statistical significance claim.
+
+Later validation also rejects nonzero load-generator exit status, malformed error/status summaries, non-finite values, zero durations and inconsistent percentiles. The published archives retain their original source identifiers and values; these checks do not replace the recorded measurements.
 
 ## Run the reproduction
 

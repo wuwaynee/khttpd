@@ -87,8 +87,18 @@ jobs:
           sudo install -m 0644 "$image" build/vmlinuz
           printf '%s\n' "$release" > build/kernel-release.txt
           modinfo khttpd.ko > build/modinfo.txt
+          if [[ "${{ matrix.kernel }}" == runner ]]; then
+            make -C "/lib/modules/$release/build" \
+              M="$PWD/bench/diagnose/legacy" W=1 modules
+          fi
       - name: Protocol, partial-init and active-unload tests in QEMU
-        run: ./scripts/ci-vm.sh "$PWD/build/vmlinuz"
+        run: |
+          if [[ "${{ matrix.kernel }}" == runner ]]; then
+            ./scripts/ci-vm.sh "$PWD/build/vmlinuz" \
+              "$PWD/bench/diagnose/legacy/khttpd_legacy.ko"
+          else
+            ./scripts/ci-vm.sh "$PWD/build/vmlinuz"
+          fi
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:

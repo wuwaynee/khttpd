@@ -37,7 +37,7 @@ class DiagnosisEvidenceTests(unittest.TestCase):
             for name in profiles:
                 rate = 100 if name == "matched_close512" else (200 + 20 * rep)
                 row = dict(profile=name, repetition=rep,
-                           configuration=profiles[name], complete=True)
+                           configuration=profiles[name], complete=True, returncode=0)
                 for key, suffix in (("stdout", "wrk"), ("stderr", "stderr"),
                                     ("validation", "validation")):
                     path = directory / f"{rep}-{name}.{suffix}.txt"
@@ -73,7 +73,7 @@ class DiagnosisEvidenceTests(unittest.TestCase):
             self.assertEqual(summary["profiles"]["hardened4"]["p50_ms"]["median"], .5)
 
     def test_refuses_tampering_missing_and_duplicate_runs(self):
-        for mode in ("tamper", "missing", "duplicate", "incomplete"):
+        for mode in ("tamper", "missing", "duplicate", "incomplete", "nonzero_exit"):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
                 directory = Path(temporary)
                 manifest = self.fixture(directory)
@@ -84,8 +84,31 @@ class DiagnosisEvidenceTests(unittest.TestCase):
                     manifest["runs"].pop()
                 elif mode == "duplicate":
                     manifest["runs"].append(manifest["runs"][0])
-                else:
+                elif mode == "incomplete":
                     manifest["complete"] = False
+                else:
+                    manifest["runs"][0]["returncode"] = 7
+                self.save(directory, manifest)
+                self.assertNotEqual(self.invoke(directory).returncode, 0)
+
+    def test_rejects_malformed_and_inconsistent_metrics(self):
+        changes = [
+            ("read 0, write", "read unknown, write"),
+            ("99% 2.00ms", "99% 0.10ms"),
+            ("in 1.00s,", "in 0.00s,"),
+            ("Requests/sec: 100.00", "Requests/sec: " + "9" * 400),
+            ("KH_VALIDATED", "Non-2xx or 3xx responses: unknown\nKH_VALIDATED"),
+        ]
+        for old, new in changes:
+            with self.subTest(field=old), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                manifest = self.fixture(directory)
+                row = manifest["runs"][0]
+                path = directory / row["stdout_file"]
+                original = path.read_text()
+                self.assertIn(old, original)
+                path.write_text(original.replace(old, new))
+                row["stdout_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
                 self.save(directory, manifest)
                 self.assertNotEqual(self.invoke(directory).returncode, 0)
 

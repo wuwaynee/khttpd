@@ -18,6 +18,9 @@ static uint shards = 1, backlog = 100, sndbuf = 0;
 module_param(shards, uint, 0444);
 module_param(backlog, uint, 0444);
 module_param(sndbuf, uint, 0444);
+static int fail_start_after = -1;
+module_param(fail_start_after, int, 0444);
+MODULE_PARM_DESC(fail_start_after, "Test only: fail after N prepared acceptors, -1 disables");
 bool keep_alive, log_requests = true, clear_buffer = true, use_pool = true, extra_crlf;
 module_param(keep_alive, bool, 0444);
 module_param(log_requests, bool, 0444);
@@ -133,7 +136,8 @@ static int __init start(void)
     unsigned int i;
     int err;
 
-    if (!port || !shards || shards > 16 || !backlog || backlog > 4096)
+    if (!port || !shards || shards > 16 || !backlog || backlog > 4096 ||
+        fail_start_after < -1 || fail_start_after > (int)shards)
         return -EINVAL;
     if (use_pool) {
         http_buf_pool = mempool_create(4, http_buf_alloc, http_buf_free, NULL);
@@ -148,6 +152,10 @@ static int __init start(void)
         goto fail;
     }
     for (i = 0; i < shards; ++i) {
+        if (fail_start_after == (int)i) {
+            err = -EIO;
+            goto fail;
+        }
         err = open_listener(&listeners[i]);
         if (err)
             goto fail;
@@ -159,8 +167,16 @@ static int __init start(void)
             goto fail;
         }
         get_task_struct(tasks[i]);
-        wake_up_process(tasks[i]);
     }
+    if (fail_start_after == (int)shards) {
+        err = -EIO;
+        goto fail;
+    }
+    /* No connection worker may run while initialization can still fail:
+     * failed init must be able to destroy the pool without live borrowers.
+     */
+    for (i = 0; i < shards; ++i)
+        wake_up_process(tasks[i]);
     pr_info("ready keep_alive=%d log=%d clear=%d shards=%u backlog=%u pool=%d\n",
             keep_alive, log_requests, clear_buffer, shards, backlog, use_pool);
     return 0;

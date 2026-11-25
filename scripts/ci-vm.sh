@@ -2,7 +2,7 @@
 # Build an isolated initramfs; never load the module into the CI host kernel.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-[[ $# == 1 ]] || { echo "usage: $0 READABLE_KERNEL_IMAGE" >&2; exit 2; }
+[[ $# == 1 || $# == 2 ]] || { echo "usage: $0 READABLE_KERNEL_IMAGE [LEGACY_MODULE]" >&2; exit 2; }
 image=$1
 command -v qemu-system-x86_64 >/dev/null
 tmp=$(mktemp -d)
@@ -13,6 +13,11 @@ ln -s busybox "$tmp/bin/sh"
 cp khttpd.ko "$tmp/khttpd.ko"
 "${CC:-cc}" -static -O2 -std=c11 -Wall -Wextra -Werror -pthread \
     tests/integration.c -o "$tmp/integration"
+if [[ $# == 2 ]]; then
+    cp "$2" "$tmp/khttpd_legacy.ko"
+    "${CC:-cc}" -static -O2 -std=c11 -Wall -Wextra -Werror -pthread \
+        tests/legacy_startup.c -o "$tmp/legacy_startup"
+fi
 sudo mknod "$tmp/dev/console" c 5 1
 sudo mknod "$tmp/dev/null" c 1 3
 cat > "$tmp/init" <<'INIT'
@@ -25,6 +30,7 @@ mount -t sysfs sysfs /sys
 ip link set lo up
 trap 'echo KH_VM_FAIL; poweroff -f' EXIT
 uname -a
+if [ -f /khttpd_legacy.ko ]; then /legacy_startup; fi
 for args in "workers=0" "shards=65" "timeout_ms=0" "bind_addr=bad"; do
     if insmod /khttpd.ko $args; then exit 1; fi
     test ! -d /sys/module/khttpd

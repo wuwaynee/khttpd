@@ -9,13 +9,15 @@
 | C compilation | C11 userspace builds with -Wall, -Wextra, -Werror; kernel modules with W=1 |
 | Shared engine | Protocol syntax, framing, fragmented/pipelined streams, partial/zero/failed sends and simulated deadlines |
 | Live socket integration | Shared/sharded listeners, both buffer policies, concurrent clients, half-close, idle/partial/slow-drip deadlines and active shutdown |
-| Evidence pipeline | Seven Python test methods covering malformed/error logs, units, checksums, recomputation, missing/duplicate cells and incomplete manifests |
+| Evidence pipeline | Python tests covering malformed/error logs, units, checksums, recomputation, missing/duplicate cells, invalid metrics, nonzero exit status and incomplete manifests |
 | wrk capture smoke | One-second userspace status/body/count validation, manifest loading and summarization |
 | ASan / UBSan | Shared engine unit suite compiled in userspace |
 | libFuzzer | Time-limited parser smoke test, maximum input length 8193 |
 | Kernel guests | Ubuntu generic Linux 5.15 and 6.8 families plus the runner's preinstalled kernel, with matching build headers |
 
 The guest tests exercise (shards,prealloc) = (1,1), (2,0), (2,1); reject invalid parameters; inject partial-start failure after 0, 1 and 8 workers; unload while eight incomplete connections are live; check a two-response connection cap; test idle/partial-header/slow-drip deadlines; and repeat load/unload ten times. Guest logs require KH_VM_PASS and are checked for BUG/WARNING/panic messages.
+
+The runner-kernel job additionally builds the historical adapter and tests its startup in the guest. Four client threads send traffic during twelve injected initialization failures (three rounds at 0, 1, 8 and 16 prepared acceptors). The test requires actual TCP connections, zero response bytes from failed loads, no remaining module/tasks, and successful load/serve/unload before and after the failures. Other kernel jobs exercise the bounded module independently.
 
 [Archived guest excerpts](../artifacts/validation/README.md) retain output from [run 43988760634](https://github.com/wuwaynee/khttpd/actions/runs/43988760634), source fe02cfb0030c4f42de6134134af2ed3e040f6202. That run used Linux 5.15.0-203-generic, 6.8.0-149-generic and 7.0.0-1017-azure. Exact versions for other runs are in their job artifacts.
 

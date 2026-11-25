@@ -21,7 +21,9 @@ build/unit: tests/unit.c $(CORE) $(HEADERS) | build
 	$(CC) $(USER_CFLAGS) $(CFLAGS) -o $@ tests/unit.c $(CORE) $(LDFLAGS)
 build/integration: tests/integration.c | build
 	$(CC) $(USER_CFLAGS) $(CFLAGS) -o $@ $< $(LDFLAGS)
-userspace: build/reference_server build/unit build/integration
+build/legacy_startup: tests/legacy_startup.c | build
+	$(CC) $(USER_CFLAGS) $(CFLAGS) -o $@ $< $(LDFLAGS)
+userspace: build/reference_server build/unit build/integration build/legacy_startup
 test check: userspace
 	./build/unit
 	./scripts/test-userspace.sh
