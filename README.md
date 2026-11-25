@@ -1,6 +1,6 @@
 # kHTTPD: bounded kernel HTTP experiments
 
-kHTTPD is an out-of-tree Linux HTTP microserver that measures and reduces connection, thread-creation and allocation overhead in a fixed-response request path. It includes recoverable before/after configurations, a bounded implementation, and repeatable throughput/latency experiments.
+kHTTPD is an out-of-tree Linux HTTP microserver for studying connection reuse, thread-creation costs and bounded buffer ownership in a fixed-response request path. It includes recoverable before/after configurations, a bounded implementation, and repeatable throughput/latency experiments.
 
 This extension of the [NCKU/sysprog21 teaching project](NOTICE.md) provides a bounded kernel implementation, a Linux userspace control using the **same parser and connection engine**, and an automated correctness/evidence workflow. It serves a fixed 12-byte body. It does not serve files or replace a production web server.
 
@@ -14,7 +14,7 @@ New primary experiment: **5 × 30 seconds per configuration, same 4-vCPU AMD Lin
 | Recovered optimized path, 4 listeners | 180,609 | 0.684 ms | 1.600 ms |
 | Hardened implementation, 512 workers / 4 listeners | **178,780** | **0.694 ms** | **1.910 ms** |
 
-The hardened median paired throughput gain was **13.34×**, with every repetition **13.04–13.43×**. All 15 primary cells had zero wrk socket errors; separate status/body validation checked 3.44 million responses with zero invalid. [Raw files, observed ranges, independent feature controls and scope](docs/PERFORMANCE.md) are published together. [繁體中文解說](docs/PERFORMANCE_ZH.md) explains the diagnosis.
+The hardened median paired throughput gain was **13.34×**, with every repetition **13.04–13.43×**. All 15 primary cells had zero wrk socket errors; separate status/body validation checked 3.44 million responses with zero invalid. [Raw files, observed ranges, independent feature controls and scope](docs/PERFORMANCE.md) are published together.
 
 Read the [measurement and reconstruction method](docs/PERFORMANCE_METHOD.md) for the exact baseline and conditions. The principal effect is avoiding per-request connection and kernel-thread churn. Feature controls evaluate logging, listener sharding and buffer policy separately.
 
@@ -81,13 +81,13 @@ Inspect all limits with modinfo khttpd.ko. The stats parameter is updated when c
 
 ## Reproducible experiments
 
-For the historical optimization and resume workload, use the [native before/after reproduction](docs/PERFORMANCE_METHOD.md). Its primary comparison uses HTTP/1.1 GET /, the same 12-byte body, wrk 4T/256C, and five 30-second runs per setting. The [performance workflow](.github/workflows/performance.yml) runs it on a fresh Linux VM; the [matched feature workflow](.github/workflows/ablation.yml) repeats the mechanism controls independently.
+For the historical before/after workload, use the [native before/after reproduction](docs/PERFORMANCE_METHOD.md). Its primary comparison uses HTTP/1.1 GET /, the same 12-byte body, wrk 4T/256C, and five 30-second runs per setting. The [performance workflow](.github/workflows/performance.yml) runs it on a fresh Linux VM; the [matched feature workflow](.github/workflows/ablation.yml) repeats the mechanism controls independently.
 
 The hardened 256-connection configuration is workers=512, shards=4, keep_alive=1, prealloc=1, max_requests=1000000. In this revision workers bounds active connection handling; shards counts listeners. The older workers parameter counted acceptors, so the two meanings are not interchangeable.
 
 The separate protocol below compares kernel and userspace implementations. It answers a different question from the project's historical before/after speedup.
 
-Read [the benchmark protocol](docs/BENCHMARKING.md) before quoting numbers. The runner records a clean source commit/tree, binary hashes, environment, CPU placement, randomized run order, raw wrk output, and response validation. It refuses failed or incomplete evidence.
+The [kernel/userspace benchmark protocol](docs/BENCHMARKING.md) records a clean source commit/tree, binary hashes, environment, CPU placement, randomized run order, raw wrk output, and response validation. It refuses failed or incomplete evidence.
 
 ~~~bash
 sudo apt-get install -y wrk util-linux
@@ -105,11 +105,9 @@ The full ablation uses --implementation both without --single, built kernel and 
 [CI](.github/workflows/ci.yml) performs C warning checks, shared-engine tests, userspace socket integration, ASan/UBSan, a bounded fuzz smoke test, and isolated QEMU kernel lifecycle/protocol tests on the generic and runner kernels. A one-second wrk capture checks the evidence pipeline; it is not performance evidence. CI failures fail the workflow.
 
 - [Design and invariants](docs/DESIGN.md)
-- [Original 28-file audit](docs/AUDIT.md)
 - [Experimental protocol](docs/BENCHMARKING.md)
 - [Measured performance](docs/PERFORMANCE.md)
 - [Historical reconstruction method](docs/PERFORMANCE_METHOD.md)
-- [Interview and claim boundaries](docs/INTERVIEW.md)
 - [Provenance and license](NOTICE.md)
 
-Useful Linux engineering contributions here are the reviewable lifetime fixes, bounded protocol handling, regression cases, and controlled experiment machinery. The measured before/after gain applies to the recorded workload. A kernel/userspace advantage, production readiness and upstream acceptance would require separate evidence.
+The measured speedup compares versions of this microserver under the recorded fixed-response workload. The separate kernel/userspace experiment is specified but has not been measured in full.

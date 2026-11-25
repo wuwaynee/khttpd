@@ -2,9 +2,9 @@
 
 ## Research question and scope
 
-A fixed-response microservice isolates a small portion of server behavior: accept, parse headers, select a fixed response, transmit, and reuse or close the connection. We vary connection reuse, the number of listeners, and buffer allocation with the same payload, parser, connection engine, and bounded blocking-worker model on both sides.
+A fixed-response microservice isolates a small portion of server behavior: accept, parse headers, select a fixed response, transmit, and reuse or close the connection. The published [before/after experiment](PERFORMANCE.md) compares recovered close-per-request behavior, recovered persistent connections and the bounded implementation described here. Separate feature controls vary logging, listener count and buffer policy.
 
-The kernel implementation uses Linux kernel sockets and kthreads. The control uses Linux sockets and pthreads. They still differ in scheduling, runtime, accounting, and implementation details of their transport adapters. This is a controlled comparison of these two implementations, not proof of a universal kernel/userspace advantage.
+The kernel implementation uses Linux kernel sockets and kthreads. A Linux sockets/pthreads control shares its parser, connection engine, payload and bounded blocking-worker model. This control supports a separate [kernel/userspace experiment](BENCHMARKING.md), which has not been measured in full. Scheduling, runtime, accounting and transport-adapter details still differ between those implementations.
 
 Kernel placement does not bypass TCP/IP. kernel_recvmsg copies into the receive buffer; kernel_sendmsg does not establish zero-copy transmission. Fewer userspace syscall crossings are a hypothesis to measure. CPU cycles, context switches, allocator behavior, and security costs cannot be inferred from throughput alone.
 
@@ -111,4 +111,4 @@ The socket-address pointer used by kernel_bind changed from sockaddr to sockaddr
 
 There is no TLS, IPv6 listener, filesystem service, authentication, proxy support, arbitrary request body, chunked decoder, or production denial-of-service guarantee. The module operates in init_net rather than implementing per-network-namespace lifecycle. The finite worker model is a conscious simplification.
 
-A future event-driven or queued implementation needs new ownership invariants and controls; it should not be introduced as an unmeasured speed improvement. Upstream-worthy work would require a specific Linux subsystem problem, demonstrated benefit, maintainership review, and accepted patches. This repository currently provides an independent research artifact.
+A future event-driven or queued implementation needs new ownership invariants and controls; it should not be introduced as an unmeasured speed improvement.

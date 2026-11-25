@@ -2,7 +2,7 @@
 
 ## Evidence status
 
-The historical optimization now has a separate [native same-machine reproduction](PERFORMANCE.md), described in [PERFORMANCE_METHOD.md](PERFORMANCE_METHOD.md). Use that protocol for the resume's before/after throughput and latency question. The remainder of this document specifies the kernel/userspace control experiment, which answers a different question.
+The historical optimization now has a separate [native same-machine reproduction](PERFORMANCE.md), described in [PERFORMANCE_METHOD.md](PERFORMANCE_METHOD.md). That protocol measures the before/after throughput and latency change. The remainder of this document specifies the kernel/userspace control experiment, which answers a different question.
 
 The kernel/userspace factorial experiment below has not been run in full. Its one-second CI captures test the measurement code only and are not representative steady-load results. The new native historical comparison is reported separately, with its own frozen configurations and evidence.
 
@@ -20,13 +20,13 @@ The primary full experiment is a 2 × 2 × 2 factorial ablation for **each** imp
 | Listeners | shards=1 / 4 by default | Compare shared accept queue with SO_REUSEPORT listener groups |
 | Buffer policy | prealloc=0 / 1 | Compare one allocation per connection with startup allocation/reuse |
 
-When reuse is enabled, per-connection allocation already amortizes across requests. Do not present a negligible allocation difference as a failed experiment, or infer a fragmentation improvement without measuring fragmentation.
+When reuse is enabled, per-connection allocation is already amortized across requests. Throughput differences and memory-fragmentation effects are separate measurements; a small or neutral throughput difference is a valid outcome.
 
 A combined kernel/user comparison changes execution domain and runtime. An ablation within one implementation changes one factor at a time. Report interactions as well as main effects; do not ascribe a combined multi-factor delta to SO_REUSEPORT or kernel placement alone.
 
 ## Prepare
 
-Use a dedicated supported Linux VM or test machine for module experiments. For credible performance measurements prefer dedicated physical cores and repeat on another host; a shared CI runner or emulated QEMU guest is only suitable for correctness.
+Use a dedicated supported Linux VM or test machine for module experiments. Dedicated physical cores and a separate load host provide stronger isolation. The published native-VM before/after measurements record shared-host conditions and use within-host ratios; CPU contention and client saturation limit their scope. CPU-emulated QEMU guests are used for correctness checks rather than throughput measurements.
 
 ~~~bash
 sudo apt-get update
@@ -43,7 +43,7 @@ sudo -v
 
 Commit source changes first. The runner rejects a dirty checkout and an already-loaded khttpd module, and refuses an occupied port. It never force-unloads a module. It restarts its own server for each cell/run.
 
-Build outputs must come from the recorded clean checkout. The manifest records binary hashes and compiler/kernel information; hashes establish file identity, not proof of who ran an experiment. Rebuilding with a different compiler or configuration is a new experiment. The kernel image/headers must match.
+Build outputs must come from the recorded clean checkout. The manifest records binary hashes and compiler/kernel information; hashes establish the identity of the recorded files. Rebuilding with a different compiler or configuration is a new experiment. The kernel image/headers must match.
 
 ## Run
 
@@ -109,4 +109,4 @@ wrk is a closed-loop load generator. As a server slows, the client offers less w
 
 Publish the experiment directory and its source commit together after review. Generated run directories are ignored by default, so add a selected evidence directory explicitly with git add -f, including failed runs relevant to the comparison. Explain the experiment in prose; do not submit only a table of favorable medians.
 
-The historical before/after speedup is evaluated separately in PERFORMANCE.md. Use that dataset and its exact scope for the quantitative claim. This kernel/userspace protocol has not established a domain advantage, allocation-latency reduction, or Linux upstream contribution.
+The before/after results in [PERFORMANCE.md](PERFORMANCE.md) are independent of this kernel/userspace protocol. The latter has not established a kernel/userspace performance difference or an allocator-latency result.

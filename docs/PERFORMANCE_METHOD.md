@@ -1,6 +1,6 @@
 # Reconstructing and measuring the historical optimization
 
-The historical resume observation was 3,436.83 → 37,739.84 requests/s, p50 74.80 → 2.99 ms, and p99 113.04 → 12.06 ms with wrk 4 threads and 256 connections. Those values are retained as historical observations. The current reconstruction runs executable before/after configurations on one recorded Linux VM and publishes every repetition. See PERFORMANCE.md for the resulting measurements and scope.
+The archived 2025 observation was 3,436.83 → 37,739.84 requests/s, p50 74.80 → 2.99 ms, and p99 113.04 → 12.06 ms with wrk 4 threads and 256 connections. Those values are retained as historical observations. The current reconstruction runs executable before/after configurations on one recorded Linux VM and publishes every repetition. See [PERFORMANCE.md](PERFORMANCE.md) for the resulting measurements and scope.
 
 ## Recoverable source and behavior
 
@@ -41,7 +41,7 @@ Common repairs apply to every historical configuration: bounded URL copying, ter
 
 A long experiment also reproduced a real old lifecycle issue: an accepted connection can outlive the load generator and remain blocked in receive. The diagnostic module now gives accepted sockets a 10-second blocking timeout, longer than wrk's 2-second request timeout. This bounds orphan cleanup without reducing the timeout of a successful measured request. The runner waits for references to drain and never force-unloads the module. The hardened server already has explicit socket ownership, absolute deadlines, shutdown and joins.
 
-These repairs are disclosed because the reconstruction is not byte-identical to an old binary. There is no inserted per-request delay, rate limiter, or target-dependent baseline slowdown.
+These common repairs apply to all recovered historical profiles. The adapter preserves the connection, logging, clearing, listener and allocation switches used by the experiment; it is not byte-identical to an old binary.
 
 ## Ablations and accounting
 
@@ -74,7 +74,7 @@ For the primary frozen implementation, clone the repository and check out c1dda1
 
 The checkout must be clean and committed. The runner refuses preexisting modules or an occupied port. Source commit, binary hashes, wrk/compiler identities, kernel, CPU topology, memory, kernel command line, CPU snapshots, module arguments, actual run order, raw output, validation and file checksums are captured. The performance workflow automates this on a fresh hosted VM.
 
-To inspect just the hardened endpoint under the resume workload:
+To inspect the hardened endpoint under the 256-connection workload:
 
 ~~~bash
 sudo insmod khttpd.ko workers=512 shards=4 prealloc=1 keep_alive=1 \

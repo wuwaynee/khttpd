@@ -2,7 +2,7 @@
 
 The repaired project reproduced a **13.34× median paired throughput improvement** over the recovered close-per-request baseline in five 30-second runs on the same 4-vCPU Linux VM. The hardened result was **178,780.35 req/s**, **0.694 ms p50** and **1.910 ms p99** (medians across runs). Every paired throughput improvement was above 13×. The recovered optimized implementation achieved a similar result, showing that the historical optimization mechanism survives independently of the new parser and worker design.
 
-These new measurements support the scale of the historical approximately 11× observation. They do not re-create the exact old machine: the historical 3,436.83 → 37,739.84 req/s and 74.80/113.04 → 2.99/12.06 ms values remain separately preserved observations. Never combine old and new rates into one ratio.
+The [archived 2025 logs](../artifacts/legacy-2025/README.md) record 3,436.83 → 37,739.84 req/s, p50 74.80 → 2.99 ms and p99 113.04 → 12.06 ms. The current experiment reconstructs the source behavior on recorded new hardware; the original machine and executable are unavailable. Ratios below use only paired measurements from the same experiment.
 
 ## Primary result: five repeated 30-second runs
 
@@ -18,7 +18,7 @@ The hardened median paired gain is **13.337× [13.045–13.428×]**; median pair
 
 **Environment and scope:** AMD EPYC 9V74 guest CPU, 4 logical vCPUs (2 cores with SMT), approximately 16 GiB RAM, Ubuntu 24.04.5, Linux 7.0.0-1017-azure x86-64, GCC 13.3.0, wrk debian/4.1.0-4build2. Both wrk and the module use the same entire VM and loopback; there is no nested QEMU CPU emulation or dedicated client core. The CPU is saturated in the optimized cells, so this measures the complete client/server workload on that VM, not an isolated server-capacity ceiling.
 
-**Workload:** HTTP/1.1 GET /, fixed 12-byte Hello World! body, wrk 4 threads / 256 connections / 2-second timeout. Each cell gets a fresh module, a separate 2-second status/body validation phase, 5-second warmup and 30-second plain-wrk measurement. Profile order is randomized within each of five repetitions (recorded seed 20261117). Timed cells completed **2,011,901 baseline**, **27,010,334 recovered optimized**, and **26,732,678 hardened** responses. All 15 timed cells had zero wrk connect/read/write/timeout errors and no non-success statuses. Separate validation checked **3,437,770 responses, zero invalid**. Primary throughput does not include Lua body validation overhead; it is not a claim that each timed body was individually compared.
+**Workload:** HTTP/1.1 GET /, fixed 12-byte Hello World! body, wrk 4 threads / 256 connections / 2-second timeout. Each cell gets a fresh module, a separate 2-second status/body validation phase, 5-second warmup and 30-second plain-wrk measurement. Profile order is randomized within each of five repetitions (recorded seed 20261117). Timed cells completed **2,011,901 baseline**, **27,010,334 recovered optimized**, and **26,732,678 hardened** responses. All 15 timed cells had zero wrk connect/read/write/timeout errors and no non-success statuses. Separate validation checked **3,437,770 responses, zero invalid**. Body validation runs in a separate phase; the timed phase uses plain wrk to avoid Lua callback overhead in the throughput measurement.
 
 The conservative baseline uses backlog 512 rather than the old default 100, matching the optimized backlog. This avoids assigning a smaller accept queue's failures to the other changes. Every implementation uses the kernel TCP stack. This is a project-version comparison, not a claim that kernel HTTP is 13× faster than a matched userspace server.
 
@@ -57,7 +57,7 @@ The complete historical optimized code survives on a feature branch at [c745737]
 
 The repaired main implementation resolves the truncated source, unbounded URL accumulation, ignored parser results, zero-send loop, unbounded connection-thread creation, and unjoined-worker/module-unload risks. It also makes parameter semantics explicit: **workers=512** is connection-handling capacity; **shards=4** is listener count. The old workers=4 meant acceptors and spawned additional connection threads, so carrying that command into the new design would limit it to four concurrent clients.
 
-The separate historical adapter retains the recovered hot path with disclosed common build/lifetime repairs. Valid close and persistent frames are checked as **112 and 117 application bytes**; both contain the same 12-byte body. No artificial delay, throttling or incomplete response is used to slow the baseline. See [the full reconstruction method](PERFORMANCE_METHOD.md), [design](DESIGN.md), and [correctness record](VALIDATION.md).
+The separate historical adapter retains the recovered hot path with disclosed common build/lifetime repairs. Valid close and persistent frames are checked as **112 and 117 application bytes**; both contain the same 12-byte body. See [the full reconstruction method](PERFORMANCE_METHOD.md), [design](DESIGN.md), and [correctness record](VALIDATION.md).
 
 ## Raw evidence and independent checking
 
@@ -87,10 +87,9 @@ The incomplete predecessor is retained rather than silently dropped: its old bac
 
 Server I/O counters sampled after wrk exits are kept even when nonzero. In the primary hardened cells there are 142–173 post-phase I/O events and exactly the same number of additional successful server response sends beyond client-completed responses. This is consistent with in-flight work terminated at the client stop boundary; it is not proof that a successful send was consumed by a client. wrk reports zero socket errors in the measured cells. The two accounting domains are not conflated.
 
-## Reproduce and describe the outcome
+## Reproduction
 
 Use the exact [native reproduction commands](PERFORMANCE_METHOD.md#run-the-reproduction) in a disposable Linux VM with matching headers and module-loading privileges, or run the [performance workflow](../.github/workflows/performance.yml). To freeze the primary implementation, check out c1dda1ae93c1deb3cf2cc258051a7113f13a0094 before building. To repeat the matched mechanism controls, use the [ablation workflow](../.github/workflows/ablation.yml) at 9ee238ad74fb65368d876fd56228a0944c307147. The harness records the new source identity and refuses a dirty checkout, missing cells, invalid bodies/statuses, or checksum mismatches.
 
-A supported quantitative description is: **"Reproduced a 13.3× median throughput improvement (13.4k → 178.8k req/s), reducing p50 18.26 → 0.694 ms and p99 34.36 → 1.91 ms across five 30-second wrk 4T/256C loopback runs on a 4-vCPU Linux VM."** Use [the resume snippet](RESUME_SNIPPET.tex) and [interview notes](INTERVIEW.md) for the mechanism and limits. A Traditional Chinese walkthrough is in [PERFORMANCE_ZH.md](PERFORMANCE_ZH.md).
 
 This result establishes a reproducible improvement for a fixed-body kernel microserver workload. It does not establish a universal 11× multiplier, identical absolute results on arbitrary hardware, production HTTP/TLS/file-serving performance, or a kernel-versus-userspace advantage. A separate constant-arrival-rate experiment is needed for independent-arrival latency/SLO claims; closed-loop wrk percentiles do not provide that by themselves.

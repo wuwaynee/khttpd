@@ -1,38 +1,35 @@
-# Validation record
+# Validation
 
-The fully passing four-job engineering run verified commit **fe02cfb0030c4f42de6134134af2ed3e040f6202**:
+## Correctness workflow
 
-[GitHub Actions run 43988760634](https://github.com/wuwaynee/khttpd/actions/runs/43988760634)
+[Source a7b6a83](https://github.com/wuwaynee/khttpd/tree/a7b6a83d0d15385eb17a4d7aff8e59e81f669c25) passed [all four correctness jobs](https://github.com/wuwaynee/khttpd/actions/runs/44006305301): the shared/userspace suite and three x86-64 kernel-guest jobs. The [workflow](../.github/workflows/ci.yml) pins action revisions and fails on compilation or test errors.
 
-| Check | Actual result |
+| Check | Coverage |
 |---|---|
-| Userspace C compilation | -std=c11, -Wall, -Wextra, -Werror; pass |
-| Shared engine unit tests | Protocol syntax, framing, fragmented/pipelined streams, partial/zero/failed sends, deadline simulation; pass |
-| Userspace socket integration | Shared and sharded listeners; both buffer policies; request/response checks, concurrency, half-close, real idle/partial/slow-drip deadlines and active shutdown; pass |
-| Evidence parser tests | 4 Python test methods, including malformed/incomplete/error logs, units, checksums and missing cells; pass |
-| Actual wrk pipeline smoke | One-second userspace capture, status/body/count validation, manifest loading and summarization; pass; not performance evidence |
-| ASan and UBSan | Shared engine unit suite; pass |
-| libFuzzer smoke | 3,018,675 executions in the time-limited run, maximum input length 8193; pass; finite smoke test, not exhaustive |
-| Ubuntu 22.04 guest | Linux 5.15.0-203-generic x86-64; module build and QEMU runtime pass |
-| Ubuntu 24.04 generic guest | Linux 6.8.0-149-generic x86-64; module build and QEMU runtime pass |
-| Ubuntu 24.04 runner-kernel guest | Linux 7.0.0-1017-azure x86-64; module build and QEMU runtime pass |
+| C compilation | C11 userspace builds with -Wall, -Wextra, -Werror; kernel modules with W=1 |
+| Shared engine | Protocol syntax, framing, fragmented/pipelined streams, partial/zero/failed sends and simulated deadlines |
+| Live socket integration | Shared/sharded listeners, both buffer policies, concurrent clients, half-close, idle/partial/slow-drip deadlines and active shutdown |
+| Evidence pipeline | Seven Python test methods covering malformed/error logs, units, checksums, recomputation, missing/duplicate cells and incomplete manifests |
+| wrk capture smoke | One-second userspace status/body/count validation, manifest loading and summarization |
+| ASan / UBSan | Shared engine unit suite compiled in userspace |
+| libFuzzer | Time-limited parser smoke test, maximum input length 8193 |
+| Kernel guests | Ubuntu generic Linux 5.15 and 6.8 families plus the runner's preinstalled kernel, with matching build headers |
 
-Each guest executed protocol/integration checks with configurations (shards,prealloc) = (1,1), (2,0), (2,1); rejected invalid parameters; exercised initialization failure after 0, 1 and 8 workers; unloaded while eight incomplete connections were live; checked a two-response connection cap; exercised real idle, partial-header and slow-drip deadlines; and repeated load/unload ten times. All three logs ended with KH_VM_PASS and the guest dmesg checks found no BUG/WARNING/panic matches.
+The guest tests exercise (shards,prealloc) = (1,1), (2,0), (2,1); reject invalid parameters; inject partial-start failure after 0, 1 and 8 workers; unload while eight incomplete connections are live; check a two-response connection cap; test idle/partial-header/slow-drip deadlines; and repeat load/unload ten times. Guest logs require KH_VM_PASS and are checked for BUG/WARNING/panic messages.
 
-[Guest runtime excerpts](../artifacts/validation/README.md) preserve actual output from this run. Full job logs and artifacts are linked from GitHub Actions. The checked workflow also pins action revisions. The later documentation/evidence update does not alter this tested C implementation.
+[Archived guest excerpts](../artifacts/validation/README.md) retain output from [run 43988760634](https://github.com/wuwaynee/khttpd/actions/runs/43988760634), source fe02cfb0030c4f42de6134134af2ed3e040f6202. That run used Linux 5.15.0-203-generic, 6.8.0-149-generic and 7.0.0-1017-azure. Exact versions for other runs are in their job artifacts.
 
-## Latest source and evidence checks
+## Native performance evidence
 
-The later source **9ee238ad74fb65368d876fd56228a0944c307147** also passed all four [correctness jobs](https://github.com/wuwaynee/khttpd/actions/runs/44003653925): shared/userspace checks plus the three guest-kernel matrix jobs. The Python suite now has seven test methods, including the diagnostic summarizer's recomputation, tamper/missing/duplicate/incomplete rejection and retained socket-error accounting. Synthetic fixture values are not performance measurements.
+The [five-repeat primary](https://github.com/wuwaynee/khttpd/actions/runs/44002074047) and [independent matched controls](https://github.com/wuwaynee/khttpd/actions/runs/44003646281) completed successfully on native Linux VMs. [PERFORMANCE.md](PERFORMANCE.md) records their sources, environments, results, variability and permanent raw archives.
 
-The native [five-repeat primary](https://github.com/wuwaynee/khttpd/actions/runs/44002074047) and [independent matched controls](https://github.com/wuwaynee/khttpd/actions/runs/44003646281) both completed successfully. Their published raw archive SHA-256 digests matched GitHub's artifact digests, and local recomputation of both summaries matched the archived JSON exactly. Exact performance environments and scope are in [PERFORMANCE.md](PERFORMANCE.md).
+Archive SHA-256 digests matched GitHub's artifact digests. Recomputing both summaries from the hash-checked raw logs produced the archived JSON exactly. These measurements are separate from the correctness workflow's one-second smoke test.
 
 ## Re-run
 
 ~~~bash
 make test
 make sanitize
-# Optional bounded fuzz smoke with clang:
 clang -std=c11 -g -O1 -fsanitize=fuzzer,address,undefined \
   tests/fuzz_protocol.c http_protocol.c -o build/fuzz
 ./build/fuzz -max_total_time=20 -max_len=8193
@@ -52,14 +49,10 @@ sudo install -m 0644 "$image" build/vmlinuz
 ./scripts/ci-vm.sh "$PWD/build/vmlinuz"
 ~~~
 
-Only the guest loads khttpd.ko. The host needs sudo to copy the distro kernel image and create temporary initramfs device nodes.
+Only the guest loads khttpd.ko in this correctness check. The host needs sudo to copy the distro kernel image and create temporary initramfs device nodes. Native performance reproduction uses the separate commands in [PERFORMANCE_METHOD.md](PERFORMANCE_METHOD.md).
 
-## Limits
+## Coverage limits
 
-The separate [native historical-performance reproduction](PERFORMANCE.md) now runs repeated before/after throughput and latency measurements. Its source, hardware, raw data and method are distinct from the correctness jobs recorded above.
+ASan/UBSan and fuzzing operate on the shared C engine in userspace. Guest tests use stock distribution kernels, without custom KASAN, KCSAN or lockdep instrumentation. fail_start_after tests deterministic partial-start cleanup rather than every allocator failure. Finite fuzzing and runtime tests do not establish race freedom or complete protocol conformance.
 
-These are correctness and workflow checks. The real wrk smoke is too short and runs on shared CI hardware, so it supports no throughput/latency improvement claim. No controlled kernel/user performance matrix has been run during this revision.
-
-ASan/UBSan/fuzzing operate on the shared C engine in userspace. The guest uses stock distribution kernels, not KASAN, KCSAN, lockdep-enabled custom kernels or allocation fault-injection builds. fail_start_after checks deterministic partial-start cleanup; it does not simulate every allocator failure.
-
-Optional bpftrace/perf captures were not executed. Non-x86-64 architectures and kernels outside the recorded matrix are not verified. The source's acceptance by a compiler and the finite tests do not prove security or race freedom.
+Optional perf/bpftrace captures were not executed for the published performance runs. The kernel/userspace performance matrix has not been run in full. Non-x86-64 architectures and kernels outside the recorded matrix need separate verification.
